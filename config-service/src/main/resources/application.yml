@@ -1,0 +1,43 @@
+server:
+  port: 8761
+
+spring:
+  application:
+    name: config-service
+  security:
+    user:
+      # Change these credentials in production via environment variables:
+      # SPRING_SECURITY_USER_NAME and SPRING_SECURITY_USER_PASSWORD
+      name: ${EUREKA_USERNAME:eureka}
+      password: ${EUREKA_PASSWORD:eureka123}
+
+eureka:
+  instance:
+    hostname: ${EUREKA_HOST:localhost}
+  client:
+    # Do NOT register the Eureka server with itself
+    register-with-eureka: false
+    # Do NOT fetch the registry (server doesn't need to discover others)
+    fetch-registry: false
+    service-url:
+      defaultZone: http://${spring.security.user.name}:${spring.security.user.password}@${eureka.instance.hostname}:${server.port}/eureka/
+  server:
+    # Wait time before starting to evict instances (ms) — increase in prod
+    wait-time-in-ms-when-sync-empty: 0
+    # Disable self-preservation in dev (enable in production!)
+    enable-self-preservation: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.netflix.eureka: INFO
+    com.netflix.discovery: INFO
+

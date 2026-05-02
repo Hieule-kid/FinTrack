@@ -1,0 +1,92 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: auth-service
+
+  # ── PostgreSQL Data Source ────────────────────────────────────────────────
+  datasource:
+    # Override with env var: POSTGRES_URL
+    url: ${POSTGRES_URL:jdbc:postgresql://localhost:5432/fintrack_auth}
+    username: ${POSTGRES_USERNAME:postgres}
+    password: ${POSTGRES_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      # Keep pool small for dev; tune for production
+      maximum-pool-size: ${HIKARI_MAX_POOL:10}
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+
+  # ── JPA / Hibernate ───────────────────────────────────────────────────────
+  jpa:
+    hibernate:
+      # use "validate" or "none" in production; "update" is fine for dev
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        default_schema: public
+        jdbc:
+          # Use batch inserts for better write throughput
+          batch_size: 25
+        order_inserts: true
+        order_updates: true
+
+# ── Eureka Client ─────────────────────────────────────────────────────────
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_USERNAME:eureka}:${EUREKA_PASSWORD:eureka123}@${EUREKA_HOST:localhost}:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+
+# ── JWT ───────────────────────────────────────────────────────────────────
+# IMPORTANT: Replace the secret in production with a strong random key (32+ chars)
+# Inject via environment variable: FINTRACK_JWT_SECRET
+fintrack:
+  jwt:
+    secret: ${FINTRACK_JWT_SECRET:fintrack-super-secret-key-change-me-in-prod-123}
+    # Access token: 15 minutes (900,000 ms)
+    access-token-expiry-ms: ${FINTRACK_JWT_ACCESS_EXPIRY_MS:900000}
+    # Refresh token TTL in days
+    refresh-token-expiry-days: ${FINTRACK_JWT_REFRESH_EXPIRY_DAYS:7}
+
+# ── Actuator ──────────────────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+logging:
+  level:
+    com.fintrack.auth: DEBUG
+    org.springframework.security: INFO
+    org.hibernate.SQL: DEBUG
+
+# ── Swagger / SpringDoc ────────────────────────────────────────────────────
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    # Group endpoints by HTTP method for readability
+    operations-sorter: method
+    tags-sorter: alpha
+    # Expand request bodies by default
+    default-models-expand-depth: 2
+    # Persist the Authorization header between page reloads
+    persist-authorization: true
+    # Disable the "Try it out" toggle so it's always enabled
+    try-it-out-enabled: true
+
