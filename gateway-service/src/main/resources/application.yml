@@ -19,6 +19,13 @@ spring:
           metadata:
             connect-timeout: ${AUTH_ROUTE_CONNECT_TIMEOUT_MS:3000}
             response-timeout: ${AUTH_ROUTE_RESPONSE_TIMEOUT_MS:10000}
+        - id: planning-service-route
+          uri: lb://planning-service
+          predicates:
+            - Path=/api/v1/plans/**
+          metadata:
+            connect-timeout: ${PLANNING_ROUTE_CONNECT_TIMEOUT_MS:3000}
+            response-timeout: ${PLANNING_ROUTE_RESPONSE_TIMEOUT_MS:10000}
 
 eureka:
   client:
