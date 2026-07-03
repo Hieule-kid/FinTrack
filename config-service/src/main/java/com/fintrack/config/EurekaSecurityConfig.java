@@ -37,7 +37,7 @@ public class EurekaSecurityConfig {
             )
             .authorizeHttpRequests(auth -> auth
                 // Allow actuator health endpoint without authentication
-                .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers("/actuator/health").permitAll().requestMatchers("/api/auth/**").permitAll()
                 // All other requests require authentication
                 .anyRequest().authenticated()
             )

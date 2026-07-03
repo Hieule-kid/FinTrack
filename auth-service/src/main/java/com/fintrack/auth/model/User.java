@@ -10,9 +10,13 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -20,6 +24,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -39,6 +44,7 @@ import java.util.Set;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(of = "id", callSuper = false)
 @Entity
 @Table(name = "users")
 public class User extends BaseEntity implements UserDetails {
@@ -50,18 +56,21 @@ public class User extends BaseEntity implements UserDetails {
     /**
      * Username used for login — unique across the system.
      */
+    @NotBlank(message = "Username cannot be blank")
     @Column(name = "username", unique = true, nullable = false, length = 50)
     private String username;
 
     /**
      * Email address — unique, used as an alternative login identifier.
      */
+    @NotBlank(message = "Email cannot be blank")
     @Column(name = "email", unique = true, nullable = false, length = 100)
     private String email;
 
     /**
      * BCrypt-hashed password. Never store or return plain-text passwords.
      */
+    @NotNull(message = "Password cannot be null")
     @Column(name = "password_hash", nullable = false)
     private String password;
 
@@ -77,6 +86,15 @@ public class User extends BaseEntity implements UserDetails {
     @Column(name = "role", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     private Set<Role> roles;
+
+    /**
+     * OAuth2 linked accounts for social login (Google, GitHub, etc.).
+     * Cascade delete ensures orphaned accounts are removed when the user is deleted.
+     * Uses HashSet to prevent duplicate accounts.
+     */
+    @Builder.Default
+    @OneToMany(mappedBy = "user", orphanRemoval = true)
+    private Set<Account> accounts = new HashSet<>();
 
     // ─────────────────────────────────────────────────────────────────────────
     // UserDetails — Spring Security contract

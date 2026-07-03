@@ -5,6 +5,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -49,7 +50,23 @@ public class JwtService {
      * @return a signed JWT string
      */
     public String generateAccessToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails, accessTokenExpiryMs);
+        Map<String, Object> claims = new HashMap<>();
+
+        // Add safe, useful identity claims for downstream services.
+        claims.put("username", userDetails.getUsername());
+        claims.put(
+                "roles",
+                userDetails.getAuthorities().stream()
+                        .map(GrantedAuthority::getAuthority)
+                        .toList()
+        );
+
+        if (userDetails instanceof com.fintrack.auth.model.User user) {
+            claims.put("userId", user.getId());
+            claims.put("email", user.getEmail());
+        }
+
+        return generateToken(claims, userDetails, accessTokenExpiryMs);
     }
 
     /**

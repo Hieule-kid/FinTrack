@@ -21,7 +21,7 @@ public class LoginRequest {
      * Can also accept a username — the service will try both.
      */
     @NotBlank(message = "Email or username is required")
-    private String identifier;
+    private String emailOrUsername;
 
     /** The plain-text password. Will be verified against the BCrypt hash. */
     @NotBlank(message = "Password is required")

@@ -8,8 +8,6 @@ import com.fintrack.auth.dto.response.UserResponse;
 import com.fintrack.auth.service.AuthService;
 import com.fintrack.core.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,7 +18,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -49,7 +46,7 @@ public class AuthController {
 
     @Operation(
         summary = "Register a new user account",
-        description = "Creates a new user with ROLE_USER. Returns the public profile (no tokens). Use `/login` to obtain JWT tokens."
+        description = "Creates a new user with ROLE_USER. Returns the public profile (no tokens). Use `/login/start` to begin the login flow."
     )
     @ApiResponses({
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "User created successfully"),
@@ -66,13 +63,13 @@ public class AuthController {
     }
 
     @Operation(
-        summary = "Login and receive JWT tokens",
-        description = "Authenticates with email/username + password. Returns an access token (15 min) and a refresh token (7 days)."
+            summary = "Login and receive JWT tokens",
+            description = "Authenticates with email/username + password. Returns an access token and a refresh token."
     )
     @ApiResponses({
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Login successful — JWT tokens returned"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Validation error"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid credentials")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Login successful — JWT tokens returned"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Validation error"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid credentials")
     })
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(

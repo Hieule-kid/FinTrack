@@ -86,6 +86,28 @@ services:
     networks:
       - fintrack-net
 
+  # ── API Gateway ─────────────────────────────────────────────────────────────
+  gateway-service:
+    build:
+      context: .
+      dockerfile: gateway-service/Dockerfile
+    image: fintrack/gateway-service:latest
+    restart: always
+    environment:
+      EUREKA_HOST: config-service
+      EUREKA_USERNAME: eureka
+      EUREKA_PASSWORD: eureka123
+    ports:
+      # Keep 8080 for pgAdmin, expose gateway on 8088
+      - "8088:8080"
+    depends_on:
+      config-service:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    networks:
+      - fintrack-net
+
 volumes:
   postgres_data:
   pgadmin_data:

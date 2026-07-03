@@ -1,5 +1,6 @@
 package com.fintrack.auth.dto.request;
 
+import com.fintrack.auth.model.enums.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -45,5 +46,7 @@ public class RegisterRequest {
     @Size(min = 8, message = "Password must be at least 8 characters")
     @Pattern(regexp = ".*\\d.*", message = "Password must contain at least one digit")
     private String password;
+
+    private Role role;
 }
 

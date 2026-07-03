@@ -24,12 +24,13 @@ import java.util.Set;
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserResponse {
-
     private String id;
     private String fullName;
     private String username;
     private String email;
     private Set<Role> roles;
     private LocalDateTime createdAt;
+    private String createdBy;
+    private String updatedBy;
 }
 

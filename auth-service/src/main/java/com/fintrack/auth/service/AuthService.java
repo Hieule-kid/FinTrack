@@ -27,15 +27,6 @@ public interface AuthService {
      */
     UserResponse register(RegisterRequest request);
 
-    /**
-     * Authenticates a user and issues JWT tokens.
-     *
-     * @param request the login credentials (identifier + password)
-     * @return an {@link AuthResponse} containing access token, refresh token, and user profile
-     * @throws com.fintrack.core.exception.AppException with {@code INVALID_CREDENTIALS}
-     *         if authentication fails
-     */
-    AuthResponse login(LoginRequest request);
 
     /**
      * Issues a new access token using a valid refresh token.
@@ -63,5 +54,7 @@ public interface AuthService {
      *         if no user exists with this ID
      */
     UserResponse getProfile(String userId);
+
+    AuthResponse login(LoginRequest request);
 }
 

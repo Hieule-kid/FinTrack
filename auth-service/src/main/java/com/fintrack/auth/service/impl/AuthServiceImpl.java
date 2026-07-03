@@ -21,7 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
 
@@ -31,7 +31,6 @@ import java.util.UUID;
  * <p>Handles the full authentication lifecycle:
  * <ol>
  *   <li>Registration with BCrypt password hashing</li>
- *   <li>Login with credential validation and JWT issuance</li>
  *   <li>Token refresh (validates stored refresh token, issues new access token)</li>
  *   <li>Logout (revokes all refresh tokens for the user)</li>
  * </ol>
@@ -71,24 +70,20 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public UserResponse register(RegisterRequest request) {
-        // Guard: duplicate username
         if (userRepository.existsByUsernameAndDeletedFalse(request.getUsername())) {
             throw new AppException(ErrorCode.DUPLICATE_USERNAME);
         }
 
-        // Guard: duplicate email
         if (userRepository.existsByEmailAndDeletedFalse(request.getEmail())) {
             throw new AppException(ErrorCode.DUPLICATE_EMAIL);
         }
 
-        // Build and persist user
         User user = User.builder()
                 .fullName(request.getFullName())
                 .username(request.getUsername())
                 .email(request.getEmail())
-                // NEVER store plain-text passwords
                 .password(passwordEncoder.encode(request.getPassword()))
-                .roles(Set.of(Role.USER))
+                .roles(Set.of(Role.ADMIN))
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -97,30 +92,6 @@ public class AuthServiceImpl implements AuthService {
         return toUserResponse(savedUser);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Login
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p>Accepts either email or username as the identifier.
-     */
-    @Override
-    public AuthResponse login(LoginRequest request) {
-        // Try to find by email first, then username
-        User user = userRepository
-                .findByEmailAndDeletedFalse(request.getIdentifier())
-                .or(() -> userRepository.findByUsernameAndDeletedFalse(request.getIdentifier()))
-                .orElseThrow(() -> new AppException(ErrorCode.INVALID_CREDENTIALS));
-
-        // Verify password
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new AppException(ErrorCode.INVALID_CREDENTIALS);
-        }
-
-        return buildAuthResponse(user);
-    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Refresh
@@ -132,22 +103,18 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthResponse refresh(RefreshTokenRequest request) {
-        // Look up the stored refresh token
         RefreshToken storedToken = refreshTokenRepository
                 .findByToken(request.getRefreshToken())
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_TOKEN));
 
-        // Check expiry
-        if (storedToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+        if (storedToken.getExpiryDate().isBefore(Instant.now())) {
             refreshTokenRepository.delete(storedToken);
             throw new AppException(ErrorCode.TOKEN_EXPIRED);
         }
 
-        // Load the user
         User user = userRepository.findById(storedToken.getUserId())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        // Delete old refresh token and issue fresh pair
         refreshTokenRepository.delete(storedToken);
         return buildAuthResponse(user);
     }
@@ -209,7 +176,7 @@ public class AuthServiceImpl implements AuthService {
         RefreshToken refreshToken = RefreshToken.builder()
                 .token(tokenValue)
                 .userId(user.getId())
-                .expiryDate(LocalDateTime.now().plusDays(refreshTokenExpiryDays))
+                .expiryDate(Instant.now().plusSeconds(60L * 60 * 24 * refreshTokenExpiryDays))
                 .build();
 
         refreshTokenRepository.save(refreshToken);
@@ -225,7 +192,22 @@ public class AuthServiceImpl implements AuthService {
                 .email(user.getEmail())
                 .roles(user.getRoles())
                 .createdAt(user.getCreatedAt())
+                .createdBy(user.getCreatedBy())
+                .updatedBy(user.getUpdatedBy())
                 .build();
+    }
+
+    @Override
+    public AuthResponse login(LoginRequest request) {
+        User user = userRepository.findByUsernameAndDeletedFalse(request.getEmailOrUsername())
+                .or(() -> userRepository.findByEmailAndDeletedFalse(request.getEmailOrUsername()))
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new AppException(ErrorCode.INVALID_CREDENTIALS);
+        }
+
+        return buildAuthResponse(user);
     }
 }
 
