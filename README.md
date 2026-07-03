@@ -62,6 +62,35 @@ fintrack/
 │           ├── JwtService.java      # Stateless JWT util — JJWT 0.12.x
 │           └── impl/AuthServiceImpl.java
 │
+├── planning-service/                # 🎯 Financial Planning (savings goals) — port 8090
+│   ├── pom.xml
+│   └── src/main/java/com/fintrack/planning/
+│       ├── PlanningServiceApplication.java
+│       ├── config/
+│       │   ├── SecurityConfig.java        # Spring Security filter chain (JWT validation only, stateless)
+│       │   ├── OpenApiConfig.java         # Swagger UI + JWT ****** scheme
+│       │   └── JpaAuditingConfig.java     # @EnableJpaAuditing (kept out of the main class for testability)
+│       ├── controller/
+│       │   └── PlanController.java        # /api/v1/plans/** (create, list, get, update, complete, undo, settings, delete)
+│       ├── dto/
+│       │   ├── request/   # CreatePlanRequest · UpdateMilestoneRequest · ToggleRecalculateRequest
+│       │   └── response/  # PlanResponse · PlanSummaryResponse · MilestoneResponse
+│       ├── filter/
+│       │   └── JwtAuthFilter.java   # OncePerRequestFilter — validates ****** extracts userId claim
+│       ├── model/
+│       │   ├── PlanEntity.java        # @Entity plans table
+│       │   ├── MilestoneEntity.java   # @Entity milestones table (FK to PlanEntity)
+│       │   └── enums/  # TimeframeCategory · Frequency · MilestoneStatus
+│       ├── repository/
+│       │   ├── PlanRepository.java
+│       │   └── MilestoneRepository.java
+│       └── service/
+│           ├── PlanService.java
+│           ├── JwtService.java      # Stateless, validation-only JWT util (never issues tokens)
+│           └── impl/
+│               ├── PlanServiceImpl.java
+│               └── MilestoneCalculator.java  # Pure math: schedule generation, live status, deficit redistribution
+│
 └── service-template/                # 📋 CRUD Template — copy to create new services — port 8082
     ├── pom.xml
     └── src/main/java/com/fintrack/template/
@@ -85,6 +114,7 @@ fintrack/
 |--------------------|-------|-----------------------|---------------------------------------------|
 | `config-service`   | 8761  | —                     | `http://localhost:8761` (Eureka dashboard)  |
 | `auth-service`     | 8081  | `fintrack_auth`       | `http://localhost:8081/swagger-ui.html`     |
+| `planning-service` | 8090  | `fintrack_planning`   | `http://localhost:8090/swagger-ui.html`     |
 | `service-template` | 8082  | `fintrack_template`   | `http://localhost:8082/swagger-ui.html`     |
 
 ---
@@ -115,6 +145,7 @@ docker run -d \
 
 # Create the databases for each service
 docker exec -it fintrack-postgres psql -U postgres -c "CREATE DATABASE fintrack_auth;"
+docker exec -it fintrack-postgres psql -U postgres -c "CREATE DATABASE fintrack_planning;"
 docker exec -it fintrack-postgres psql -U postgres -c "CREATE DATABASE fintrack_template;"
 ```
 
@@ -155,7 +186,15 @@ cd auth-service
 # 🌐 Swagger: http://localhost:8081/swagger-ui.html
 ```
 
-#### Terminal 3 — Service Template (optional)
+#### Terminal 3 — Planning Service
+```bash
+cd planning-service
+../mvnw spring-boot:run
+# ✅ Ready when you see: "Started PlanningServiceApplication on port 8090"
+# 🌐 Swagger: http://localhost:8090/swagger-ui.html
+```
+
+#### Terminal 4 — Service Template (optional)
 ```bash
 cd service-template
 ../mvnw spring-boot:run
@@ -231,6 +270,28 @@ All modules inherit versions from the parent — never specify a version in a ch
 | POST   | `/api/v1/auth/refresh`  | ❌ Public    | Exchange refresh token → new access |
 | GET    | `/api/v1/auth/me`       | ✅ Bearer JWT | Get current user profile            |
 | POST   | `/api/v1/auth/logout`   | ✅ Bearer JWT | Revoke all sessions                 |
+
+---
+
+## 🎯 Planning API Reference
+
+`planning-service` only **validates** JWTs issued by `auth-service` (shared `FINTRACK_JWT_SECRET`) — it never issues tokens itself. Every endpoint below requires a valid JWT and is scoped to the authenticated user.
+
+| Method | Endpoint                                                     | Description                                             |
+|--------|---------------------------------------------------------------|-----------------------------------------------------------|
+| POST   | `/api/v1/plans`                                                | Create a plan — generates the full milestone schedule     |
+| GET    | `/api/v1/plans`                                                | List the current user's plans (summary)                   |
+| GET    | `/api/v1/plans/{planId}`                                       | Get a plan + milestones + totals (live-recomputed status) |
+| PATCH  | `/api/v1/plans/{planId}/milestones/{milestoneId}`              | Update a milestone's `actualSaved`                         |
+| POST   | `/api/v1/plans/{planId}/milestones/{milestoneId}/complete`     | Mark a milestone complete                                  |
+| POST   | `/api/v1/plans/{planId}/milestones/{milestoneId}/undo`         | Undo a milestone's completion                              |
+| PATCH  | `/api/v1/plans/{planId}/settings`                               | Toggle `recalculateOnMissedDeadline`                       |
+| DELETE | `/api/v1/plans/{planId}`                                       | Delete a plan                                              |
+
+**Business rules implemented server-side:**
+- A goal is split into milestones (one per day/month/year, depending on `frequency`) — the target amount is divided evenly, with any remainder on the last milestone.
+- Milestone `status` is **never** trusted from storage — it's recomputed on every read from `actualSaved`, the effective target, the manual-completion flag, and the current date: `COMPLETED` → `OVERDUE` → `PENDING`.
+- When `recalculateOnMissedDeadline` is enabled, the combined deficit of all overdue (missed) milestones is redistributed evenly across the remaining future, not-yet-completed milestones — recomputed live on every read, never persisted as a one-time mutation.
 
 ---
 

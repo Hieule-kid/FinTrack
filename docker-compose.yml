@@ -86,6 +86,32 @@ services:
     networks:
       - fintrack-net
 
+  # ── Planning Service ────────────────────────────────────────────────────────
+  planning-service:
+    build:
+      context: .
+      dockerfile: planning-service/Dockerfile
+    image: fintrack/planning-service:latest
+    restart: always
+    environment:
+      POSTGRES_URL: jdbc:postgresql://db:5432/fintrack_planning
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: postgres
+      EUREKA_HOST: config-service
+      EUREKA_USERNAME: eureka
+      EUREKA_PASSWORD: eureka123
+      # Must match auth-service's secret — planning-service only validates tokens
+      FINTRACK_JWT_SECRET: fintrack-super-secret-key-change-me-in-prod-123
+    ports:
+      - "8090:8090"
+    depends_on:
+      db:
+        condition: service_healthy
+      config-service:
+        condition: service_healthy
+    networks:
+      - fintrack-net
+
   # ── API Gateway ─────────────────────────────────────────────────────────────
   gateway-service:
     build:
