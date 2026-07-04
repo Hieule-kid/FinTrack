@@ -31,6 +31,7 @@ import java.util.UUID;
  * <p>Handles the full authentication lifecycle:
  * <ol>
  *   <li>Registration with BCrypt password hashing</li>
+ *   <li>Login — credential validation + JWT access token + refresh token issuance</li>
  *   <li>Token refresh (validates stored refresh token, issues new access token)</li>
  *   <li>Logout (revokes all refresh tokens for the user)</li>
  * </ol>
@@ -197,6 +198,13 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Lookup order: username first, then email. The password is verified
+     * against the BCrypt-hashed value stored in the database. On success,
+     * a new JWT access token and a persisted refresh token are issued.
+     */
     @Override
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByUsernameAndDeletedFalse(request.getEmailOrUsername())

@@ -18,6 +18,13 @@ fintrack/
 │       │   └── EurekaSecurityConfig.java
 │       └── resources/application.yml
 │
+├── gateway-service/                 # 🌐 API Gateway (Spring Cloud Gateway) — port 8088
+│   ├── pom.xml
+│   └── src/main/
+│       ├── java/com/fintrack/gateway/
+│       │   └── GatewayServiceApplication.java
+│       └── resources/application.yml
+│
 ├── core/                            # 📦 Shared Library — NOT a runnable service
 │   ├── pom.xml
 │   └── src/main/java/com/fintrack/core/
@@ -44,7 +51,8 @@ fintrack/
 │       │   ├── OpenApiConfig.java         # Swagger UI + JWT Bearer security scheme
 │       │   └── TokenCleanupScheduler.java # Daily job: delete expired refresh tokens
 │       ├── controller/
-│       │   └── AuthController.java        # /api/v1/auth/** (register, login, refresh, me, logout)
+│       │   ├── AuthController.java        # /api/v1/auth/** (register, login, refresh, me, logout)
+│       │   └── UserController.java        # /api/v1/users/profile
 │       ├── dto/
 │       │   ├── request/   # LoginRequest · RegisterRequest · RefreshTokenRequest
 │       │   └── response/  # AuthResponse · UserResponse
@@ -53,6 +61,7 @@ fintrack/
 │       ├── model/
 │       │   ├── User.java            # @Entity users table — implements UserDetails
 │       │   ├── RefreshToken.java    # @Entity refresh_tokens table
+│       │   ├── Account.java         # @Entity accounts table — OAuth2 linked accounts
 │       │   └── enums/Role.java      # ADMIN · USER (implements GrantedAuthority)
 │       ├── repository/
 │       │   ├── UserRepository.java
@@ -67,16 +76,16 @@ fintrack/
 │   └── src/main/java/com/fintrack/planning/
 │       ├── PlanningServiceApplication.java
 │       ├── config/
-│       │   ├── SecurityConfig.java        # Spring Security filter chain (JWT validation only, stateless)
-│       │   ├── OpenApiConfig.java         # Swagger UI + JWT ****** scheme
-│       │   └── JpaAuditingConfig.java     # @EnableJpaAuditing (kept out of the main class for testability)
+│       │   ├── SecurityConfig.java        # Spring Security filter chain (JWT validation only)
+│       │   ├── OpenApiConfig.java         # Swagger UI + JWT security scheme
+│       │   └── JpaAuditingConfig.java     # @EnableJpaAuditing
 │       ├── controller/
-│       │   └── PlanController.java        # /api/v1/plans/** (create, list, get, update, complete, undo, settings, delete)
+│       │   └── PlanController.java        # /api/v1/plans/** (CRUD + milestone operations)
 │       ├── dto/
 │       │   ├── request/   # CreatePlanRequest · UpdateMilestoneRequest · ToggleRecalculateRequest
 │       │   └── response/  # PlanResponse · PlanSummaryResponse · MilestoneResponse
 │       ├── filter/
-│       │   └── JwtAuthFilter.java   # OncePerRequestFilter — validates ****** extracts userId claim
+│       │   └── JwtAuthFilter.java   # Validates JWT, extracts userId claim
 │       ├── model/
 │       │   ├── PlanEntity.java        # @Entity plans table
 │       │   ├── MilestoneEntity.java   # @Entity milestones table (FK to PlanEntity)
@@ -89,13 +98,13 @@ fintrack/
 │           ├── JwtService.java      # Stateless, validation-only JWT util (never issues tokens)
 │           └── impl/
 │               ├── PlanServiceImpl.java
-│               └── MilestoneCalculator.java  # Pure math: schedule generation, live status, deficit redistribution
+│               └── MilestoneCalculator.java  # Pure math: schedule gen, live status, deficit redistribution
 │
 └── service-template/                # 📋 CRUD Template — copy to create new services — port 8082
     ├── pom.xml
     └── src/main/java/com/fintrack/template/
         ├── TemplateServiceApplication.java
-        ├── config/OpenApiConfig.java  # Swagger config
+        ├── config/OpenApiConfig.java
         ├── controller/TemplateController.java
         ├── dto/request/   # CreateTemplateRequest · UpdateTemplateRequest
         ├── dto/response/  # TemplateResponse
@@ -110,12 +119,13 @@ fintrack/
 
 ## 🚀 Services Overview
 
-| Service            | Port  | DB                    | Swagger UI                                  |
-|--------------------|-------|-----------------------|---------------------------------------------|
-| `config-service`   | 8761  | —                     | `http://localhost:8761` (Eureka dashboard)  |
-| `auth-service`     | 8081  | `fintrack_auth`       | `http://localhost:8081/swagger-ui.html`     |
-| `planning-service` | 8090  | `fintrack_planning`   | `http://localhost:8090/swagger-ui.html`     |
-| `service-template` | 8082  | `fintrack_template`   | `http://localhost:8082/swagger-ui.html`     |
+| Service            | Port  | DB                    | Swagger UI / Dashboard                              |
+|--------------------|-------|-----------------------|-----------------------------------------------------|
+| `config-service`   | 8761  | —                     | `http://localhost:8761` (Eureka dashboard)          |
+| `gateway-service`  | 8088  | —                     | Routes all external traffic                         |
+| `auth-service`     | 8081  | `fintrack_auth`       | `http://localhost:8081/swagger-ui.html`             |
+| `planning-service` | 8090  | `fintrack_planning`   | `http://localhost:8090/swagger-ui.html`             |
+| `service-template` | 8082  | `fintrack_template`   | `http://localhost:8082/swagger-ui.html`             |
 
 ---
 
@@ -416,11 +426,24 @@ Error response:
 
 ---
 
+## 📚 Service Documentation
+
+Detailed Markdown docs live in the [`docs/`](docs/) folder:
+
+| File | Covers |
+|------|--------|
+| [`docs/core.md`](docs/core.md) | Shared library — BaseEntity, ApiResponse, ErrorCode, DateUtils |
+| [`docs/config-service.md`](docs/config-service.md) | Eureka discovery server — startup, credentials, health check |
+| [`docs/auth-service.md`](docs/auth-service.md) | Auth — register, login, JWT, refresh tokens, security model |
+| [`docs/planning-service.md`](docs/planning-service.md) | Planning — savings goals, milestone schedules, deficit redistribution |
+| [`docs/gateway-service.md`](docs/gateway-service.md) | API Gateway — route table, Docker config |
+
+---
+
 ## 🗺️ Planned Services (Roadmap)
 
 | Service                | Port  | DB                      | Description                      |
 |------------------------|-------|-------------------------|----------------------------------|
-| `gateway-service`      | 8080  | —                       | API Gateway (Spring Cloud Gateway)|
 | `transaction-service`  | 8083  | `fintrack_transaction`  | Income & expense tracking         |
 | `budget-service`       | 8084  | `fintrack_budget`       | Monthly budget management         |
 | `category-service`     | 8085  | `fintrack_category`     | Transaction categories            |
@@ -429,4 +452,4 @@ Error response:
 
 ---
 
-*FinTrack — April 2026*
+*FinTrack — July 2026*

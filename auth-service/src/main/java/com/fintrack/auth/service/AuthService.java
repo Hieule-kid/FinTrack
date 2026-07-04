@@ -55,6 +55,20 @@ public interface AuthService {
      */
     UserResponse getProfile(String userId);
 
+    /**
+     * Authenticates a user with email/username and password, then issues JWT tokens.
+     *
+     * <p>Accepts either a username or email address in the {@code emailOrUsername} field.
+     * On success returns a new access token, a refresh token, and the user's public profile.
+     *
+     * @param request the validated login payload containing credentials
+     * @return an {@link AuthResponse} containing the access token, refresh token,
+     *         token type, expiry, and the user's public profile
+     * @throws com.fintrack.core.exception.AppException with {@code USER_NOT_FOUND}
+     *         if no user matches the given email/username
+     * @throws com.fintrack.core.exception.AppException with {@code INVALID_CREDENTIALS}
+     *         if the password does not match
+     */
     AuthResponse login(LoginRequest request);
 }
 

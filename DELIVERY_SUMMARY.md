@@ -3,6 +3,7 @@
 **Project**: FinTrack — Personal Finance Management System  
 **Task**: Update JPA Entities to align with Microservices Architecture  
 **Date**: June 28, 2026  
+**Updated**: July 4, 2026 — financial-service removed (superseded by planning-service)  
 **Status**: ✅ **COMPLETE** — All requirements met & verified
 
 ---
@@ -14,11 +15,14 @@ Successfully updated and created JPA entities for microservices architecture com
 **Key Achievements:**
 - ✅ Updated 2 existing entities (User, RefreshToken)
 - ✅ Created 1 new entity for OAuth2 integration (Account)
-- ✅ Created 2 new entities for financial planning (FinancialPlan, Milestone)
-- ✅ Established new microservice (financial-service)
+- ✅ Savings plan and milestone tracking fully implemented in **planning-service**
 - ✅ All validations implemented
 - ✅ Soft links properly documented
 - ✅ Project builds cleanly: **0 errors, 0 warnings**
+
+> ℹ️ **Note:** `financial-service` was a skeleton service created during the initial entity update phase.
+> It has been **removed** as its intended functionality (savings goals + milestone tracking) is fully
+> implemented and production-ready in `planning-service`.
 
 ---
 
@@ -86,142 +90,36 @@ Use Case:
 
 ---
 
-### 2. New Financial Service ✨
+### 2. Savings Goal & Milestone Tracking ✅ (planning-service)
 
-#### Module Structure
-```
-financial-service/
-├── pom.xml                                    [Maven config]
-├── Dockerfile                                 [Container setup]
-├── src/main/
-│   ├── java/com/fintrack/financial/
-│   │   ├── FinancialServiceApplication.java   [Entry point]
-│   │   ├── model/
-│   │   │   ├── FinancialPlan.java            [Savings goal entity]
-│   │   │   └── Milestone.java                [Sub-goal entity]
-│   │   ├── repository/ (ready for implementation)
-│   │   ├── service/    (ready for implementation)
-│   │   ├── controller/ (ready for implementation)
-│   │   ├── dto/        (ready for implementation)
-│   │   └── config/     (ready for implementation)
-│   └── resources/
-│       └── application.yml
-└── src/test/
-    └── (ready for test implementation)
-```
+The financial planning feature is fully implemented in `planning-service`.  
+See [`docs/planning-service.md`](docs/planning-service.md) for the complete API reference, schema, and business rules.
 
-#### FinancialPlan.java — NEW ✨
-```
-Location: financial-service/src/main/java/com/fintrack/financial/model/FinancialPlan.java
-Extends: BaseEntity
+Key entities:
+- **PlanEntity** — savings goal with timeframe, frequency, and target amount
+- **MilestoneEntity** — individual interval checkpoint with live-computed status
 
-Purpose: User savings goal with target amount and deadline
-
-Fields:
-  - userId: String(36) - **SOFT LINK** to auth-service User (no physical FK)
-  - name: String(200) - Goal name (e.g., "House Down Payment")
-  - description: String(1000) - Optional context
-  - targetAmount: BigDecimal - Target savings (must be > 0)
-  - currentSavings: BigDecimal - Accumulated progress (default: 0)
-  - targetDate: ZonedDateTime - Deadline in user's timezone
-  - milestones: Set<Milestone> - Sub-goals breakdown
-
-Features:
-  ✅ @EqualsAndHashCode(of = "id", callSuper = false)
-  ✅ Validation: userId, name required; targetAmount > 0
-  ✅ Helper methods: calculateProgressPercentage(), isCompleted()
-  ✅ OneToMany with orphan removal for milestones
-  ✅ ZonedDateTime for timezone-aware deadlines
-  ✅ Soft link comment explains cross-service pattern
-
-Example:
-  ```java
-  FinancialPlan plan = FinancialPlan.builder()
-    .userId("550e8400-e29b-41d4-a716-446655440000")
-    .name("House Down Payment")
-    .targetAmount(new BigDecimal("50000.00"))
-    .currentSavings(new BigDecimal("10000.00"))
-    .targetDate(ZonedDateTime.now().plusYears(3))
-    .build();
-  
-  // Progress: 20%
-  BigDecimal progress = plan.calculateProgressPercentage();
-  ```
-```
-
-#### Milestone.java — NEW ✨
-```
-Location: financial-service/src/main/java/com/fintrack/financial/model/Milestone.java
-Extends: BaseEntity
-
-Purpose: Sub-goal checkpoint within a FinancialPlan
-
-Fields:
-  - financialPlan: FinancialPlan - Parent plan (FK, cascade delete)
-  - name: String(200) - Milestone name (e.g., "Q1 Savings")
-  - targetAmount: BigDecimal - Checkpoint amount (must be > 0)
-  - completed: boolean - Completion status (default: false)
-  - targetDate: ZonedDateTime - Deadline in user's timezone
-
-Features:
-  ✅ @EqualsAndHashCode(of = "id", callSuper = false)
-  ✅ Validation: plan, name, targetAmount > 0, date required
-  ✅ Physical FK with cascade delete on parent removal
-  ✅ ZonedDateTime for user-facing deadlines
-  ✅ Orphan removal enabled for plan lifecycle
-
-Design:
-  "When FinancialPlan is deleted → all Milestones auto-deleted"
-```
+> ~~financial-service~~ was removed on July 4, 2026 — it was a scaffold with empty controller/service/repository layers.
+> All planning functionality lives in `planning-service`.
 
 ---
 
-### 3. Configuration Files
-
-#### financial-service/pom.xml
-- Standard Spring Boot 3.4.4 microservice POM
-- Includes: JPA, Web, Validation, Eureka Client, Actuator, Swagger UI
-- Depends on: core module (shared library)
-
-#### financial-service/application.yml
-```yaml
-server:
-  port: 8083
-eureka:
-  client:
-    service-url:
-      defaultZone: http://eureka:eureka123@localhost:8761/eureka/
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/fintrack_financial
-  jpa:
-    hibernate:
-      ddl-auto: update
-```
-
-#### financial-service/Dockerfile
-- Multi-stage build for optimized image size
-- Base: Eclipse Temurin Java 17 JRE Alpine
-- Healthcheck configured
-- Port: 8083 exposed
-
----
-
-### 4. Root pom.xml — Updated
+### 3. Root pom.xml — Updated
 ```xml
 <modules>
     <module>config-service</module>
     <module>gateway-service</module>
     <module>core</module>
     <module>auth-service</module>
-    <module>financial-service</module>  <!-- NEW -->
+    <module>planning-service</module>
     <module>service-template</module>
 </modules>
 ```
 
 ---
 
-### 5. Updated Service Implementation
+### 4. Updated Service Implementation
+
 
 #### AuthServiceImpl.java — Service Update
 ```
@@ -367,11 +265,11 @@ FinancialPlan → User (soft)
 ✓ FinTrack :: Gateway Service ................. SUCCESS
 ✓ FinTrack :: Core ............................ SUCCESS
 ✓ FinTrack :: Auth Service ................... SUCCESS
-✓ FinTrack :: Financial Service .............. SUCCESS ← NEW
+✓ FinTrack :: Planning Service ............... SUCCESS
 ✓ FinTrack :: Service Template ............... SUCCESS
 
 BUILD SUCCESS
-Total time: 2.269 s
+Total time: ~3 s
 Errors: 0
 Warnings: 0
 ```
@@ -381,8 +279,8 @@ Warnings: 0
 ✓ auth-service-1.0.0-SNAPSHOT.jar
 ✓ config-service-1.0.0-SNAPSHOT.jar
 ✓ core-1.0.0-SNAPSHOT.jar
-✓ financial-service-1.0.0-SNAPSHOT.jar (NEW)
 ✓ gateway-service-1.0.0-SNAPSHOT.jar
+✓ planning-service-1.0.0-SNAPSHOT.jar
 ✓ service-template-1.0.0-SNAPSHOT.jar
 ```
 
@@ -414,38 +312,9 @@ Warnings: 0
 ## 🔄 Next Steps for Development Team
 
 ### Immediate (Ready Now):
-1. Create repositories:
-   ```java
-   public interface FinancialPlanRepository extends JpaRepository<FinancialPlan, String> {
-       List<FinancialPlan> findByUserIdAndDeletedFalse(String userId);
-   }
-   ```
-
-2. Add DTO layer for validation:
-   ```java
-   @Data
-   @NotNull
-   public class CreateFinancialPlanRequest {
-       @NotBlank String name;
-       @Min(1) BigDecimal targetAmount;
-       @NotNull ZonedDateTime targetDate;
-   }
-   ```
-
-3. Implement business services
-4. Create REST controllers
-5. Add integration tests
-
-### Database Setup:
-```bash
-# Create financial database
-docker exec -it fintrack-postgres psql -U postgres \
-  -c "CREATE DATABASE fintrack_financial;"
-
-# Verify connection
-docker exec -it fintrack-postgres psql -U postgres \
-  -d fintrack_financial -c "\dt"
-```
+Refer to the full service documentation in [`docs/`](docs/):
+- [`docs/auth-service.md`](docs/auth-service.md) — Auth API, schema, security model
+- [`docs/planning-service.md`](docs/planning-service.md) — Planning API, schema, business rules
 
 ### Run Services:
 ```bash
@@ -456,10 +325,16 @@ cd config-service && ../mvnw spring-boot:run
 cd auth-service && ../mvnw spring-boot:run
 
 # Terminal 3
-cd financial-service && ../mvnw spring-boot:run
+cd planning-service && ../mvnw spring-boot:run
 
 # Terminal 4
 cd gateway-service && ../mvnw spring-boot:run
+```
+
+### Database Setup:
+```bash
+docker exec -it fintrack-postgres psql -U postgres -c "CREATE DATABASE fintrack_auth;"
+docker exec -it fintrack-postgres psql -U postgres -c "CREATE DATABASE fintrack_planning;"
 ```
 
 ---
