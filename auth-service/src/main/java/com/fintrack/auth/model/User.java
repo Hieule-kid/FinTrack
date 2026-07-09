@@ -1,5 +1,7 @@
 package com.fintrack.auth.model;
 
+
+import com.fintrack.auth.model.enums.Currency;
 import com.fintrack.auth.model.enums.Role;
 import com.fintrack.core.base.BaseEntity;
 import jakarta.persistence.CollectionTable;
@@ -86,6 +88,9 @@ public class User extends BaseEntity implements UserDetails {
     @Column(name = "role", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     private Set<Role> roles;
+
+    @Enumerated(EnumType.STRING)
+    private Currency currency;
 
     /**
      * OAuth2 linked accounts for social login (Google, GitHub, etc.).

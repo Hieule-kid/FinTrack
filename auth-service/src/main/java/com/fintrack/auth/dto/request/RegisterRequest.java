@@ -1,5 +1,6 @@
 package com.fintrack.auth.dto.request;
 
+import com.fintrack.auth.model.enums.Currency;
 import com.fintrack.auth.model.enums.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -48,5 +49,7 @@ public class RegisterRequest {
     private String password;
 
     private Role role;
+
+    private Currency currency;
 }
 

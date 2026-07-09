@@ -1,6 +1,7 @@
 package com.fintrack.auth.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fintrack.auth.model.enums.Currency;
 import com.fintrack.auth.model.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,8 +30,7 @@ public class UserResponse {
     private String username;
     private String email;
     private Set<Role> roles;
+    private Currency currency;
     private LocalDateTime createdAt;
-    private String createdBy;
-    private String updatedBy;
 }
 

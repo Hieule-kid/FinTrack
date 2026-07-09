@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: fintrack_auth          # default DB; other DBs are created by each service
+      POSTGRES_DB: fintrack_auth, fintrack_planning     # default DB; other DBs are created by each service
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:

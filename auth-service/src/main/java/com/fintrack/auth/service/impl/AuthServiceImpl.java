@@ -85,6 +85,7 @@ public class AuthServiceImpl implements AuthService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .roles(Set.of(Role.ADMIN))
+                .currency(request.getCurrency())
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -192,9 +193,8 @@ public class AuthServiceImpl implements AuthService {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .roles(user.getRoles())
+                .currency(user.getCurrency())
                 .createdAt(user.getCreatedAt())
-                .createdBy(user.getCreatedBy())
-                .updatedBy(user.getUpdatedBy())
                 .build();
     }
 
