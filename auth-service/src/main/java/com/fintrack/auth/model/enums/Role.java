@@ -1,5 +1,7 @@
 package com.fintrack.auth.model.enums;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import org.springframework.security.core.GrantedAuthority;
 
 /**
@@ -8,6 +10,10 @@ import org.springframework.security.core.GrantedAuthority;
  * <p>Roles are stored as a {@code Set<Role>} in the {@code User} document.
  * Spring Security reads them as {@link GrantedAuthority} strings prefixed
  * with {@code "ROLE_"} (e.g. {@code "ROLE_ADMIN"}).
+ *
+ * <p>Serialized as lowercase strings in JSON (e.g. {@code "admin"}, {@code "user"})
+ * so the Next.js BFF can store them directly in the roles cookie and the
+ * middleware's {@code roles.includes("admin")} check works correctly.
  *
  * <p>Hierarchy (most privilege → least):
  * <ul>
@@ -33,6 +39,21 @@ public enum Role implements GrantedAuthority {
     @Override
     public String getAuthority() {
         return "ROLE_" + this.name();
+    }
+
+    /** Serializes the role as a lowercase string for JSON output (e.g. {@code "admin"}). */
+    @JsonValue
+    public String toValue() {
+        return this.name().toLowerCase();
+    }
+
+    /** Deserializes from either {@code "admin"} or {@code "ADMIN"} (case-insensitive). */
+    @JsonCreator
+    public static Role fromValue(String value) {
+        if (value == null) {
+            return null;
+        }
+        return Role.valueOf(value.toUpperCase());
     }
 }
 

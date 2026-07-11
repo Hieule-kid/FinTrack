@@ -85,6 +85,16 @@
             <artifactId>mapstruct</artifactId>
         </dependency>
 
+        <!-- Spring Cache + Caffeine: in-memory TTL cache for profile lookups -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
         <!-- SpringDoc OpenAPI: Swagger UI at /swagger-ui.html -->
         <dependency>
             <groupId>org.springdoc</groupId>

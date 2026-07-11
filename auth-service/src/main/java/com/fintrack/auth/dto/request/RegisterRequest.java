@@ -1,7 +1,6 @@
 package com.fintrack.auth.dto.request;
 
 import com.fintrack.auth.model.enums.Currency;
-import com.fintrack.auth.model.enums.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -19,8 +18,7 @@ import lombok.Setter;
 @Setter
 public class RegisterRequest {
 
-    /** Full display name of the user. */
-    @NotBlank(message = "Full name is required")
+    /** Full display name of the user — optional, but if provided must be 2–100 non-blank characters. */
     @Size(min = 2, max = 100, message = "Full name must be between 2 and 100 characters")
     private String fullName;
 
@@ -47,8 +45,6 @@ public class RegisterRequest {
     @Size(min = 8, message = "Password must be at least 8 characters")
     @Pattern(regexp = ".*\\d.*", message = "Password must contain at least one digit")
     private String password;
-
-    private Role role;
 
     private Currency currency;
 }
