@@ -9,6 +9,8 @@ import org.springframework.security.core.GrantedAuthority;
  * Spring Security reads them as {@link GrantedAuthority} strings prefixed
  * with {@code "ROLE_"} (e.g. {@code "ROLE_ADMIN"}).
  *
+ * <p>Serialized as uppercase strings in JSON by default (e.g. {@code "ADMIN"}, {@code "USER"}).
+ *
  * <p>Hierarchy (most privilege → least):
  * <ul>
  *   <li>{@code ADMIN} — full system access</li>
@@ -34,5 +36,7 @@ public enum Role implements GrantedAuthority {
     public String getAuthority() {
         return "ROLE_" + this.name();
     }
+
+
 }
 

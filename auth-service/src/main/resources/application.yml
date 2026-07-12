@@ -19,6 +19,12 @@ spring:
       connection-timeout: 30000
       idle-timeout: 600000
 
+  # ── Cache (Caffeine — in-memory, single-node) ─────────────────────────────
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=300s
+
   # ── JPA / Hibernate ───────────────────────────────────────────────────────
   jpa:
     hibernate:
