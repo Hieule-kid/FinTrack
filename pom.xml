@@ -60,6 +60,9 @@
         <!-- API Documentation -->
         <springdoc.version>2.8.3</springdoc.version>
 
+        <!-- Spring AI -->
+        <spring-ai.version>1.0.0</spring-ai.version>
+
         <!-- Internal module version (bump all at once) -->
         <fintrack.version>1.0.0-SNAPSHOT</fintrack.version>
     </properties>
@@ -117,6 +120,15 @@
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
                 <version>${springdoc.version}</version>
+            </dependency>
+
+            <!-- Spring AI BOM — pins all spring-ai artifact versions -->
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
