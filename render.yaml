@@ -1,123 +1,149 @@
-databases:
-  - name: fintrack-db
-    databaseName: fintrack
-    user: fintrack
-    plan: free
-    region: singapore
+version: "1"
+projects:
+  - name: My project
+    environments:
+      - name: Production
 
-services:
-  # ── Eureka / Config Service ─────────────────────────────────────────────────
-  - type: web
-    name: fintrack-config
-    runtime: docker
-    region: singapore
-    plan: free
-    dockerfilePath: ./config-service/Dockerfile
-    envVars:
-      - key: EUREKA_USERNAME
-        sync: false
-      - key: EUREKA_PASSWORD
-        sync: false
-      - key: EUREKA_HOST
-        value: 0.0.0.0
+        databases:
+          - name: fintrack-db
+            databaseName: fintrack
+            user: fintrack
+            plan: free
+            region: singapore
 
-  # ── Auth Service ────────────────────────────────────────────────────────────
-  - type: web
-    name: fintrack-auth
-    runtime: docker
-    region: singapore
-    plan: free
-    dockerfilePath: ./auth-service/Dockerfile
-    envVars:
-      - key: POSTGRES_URL
-        fromDatabase:
-          name: fintrack-db
-          property: connectionString
-      - key: POSTGRES_USERNAME
-        fromDatabase:
-          name: fintrack-db
-          property: user
-      - key: POSTGRES_PASSWORD
-        fromDatabase:
-          name: fintrack-db
-          property: password
-      - key: EUREKA_HOST
-        fromService:
-          name: fintrack-config
-          type: web
-          property: host
-      - key: EUREKA_USERNAME
-        sync: false
-      - key: EUREKA_PASSWORD
-        sync: false
-      - key: FINTRACK_JWT_SECRET
-        sync: false
-      - key: RENDER_EXTERNAL_HOSTNAME
-        fromService:
-          name: fintrack-auth
-          type: web
-          property: host
+        services:
+          # ── Eureka / Config Service ───────────────────────────────────────────
+          - type: web
+            name: fintrack-config
+            runtime: docker
+            repo: https://github.com/Hieule-kid/FinTrack
+            plan: free
+            region: singapore
+            dockerContext: .
+            dockerfilePath: ./config-service/Dockerfile
+            autoDeployTrigger: commit
+            envVars:
+              - key: FINTRACK_DEV_ENV
+                sync: false
+              - key: EUREKA_USERNAME
+                sync: false
+              - key: EUREKA_PASSWORD
+                sync: false
+              - key: EUREKA_HOST
+                value: 0.0.0.0
 
-  # ── Planning Service ────────────────────────────────────────────────────────
-  - type: web
-    name: fintrack-planning
-    runtime: docker
-    region: singapore
-    plan: free
-    dockerfilePath: ./planning-service/Dockerfile
-    envVars:
-      - key: POSTGRES_URL
-        fromDatabase:
-          name: fintrack-db
-          property: connectionString
-      - key: POSTGRES_USERNAME
-        fromDatabase:
-          name: fintrack-db
-          property: user
-      - key: POSTGRES_PASSWORD
-        fromDatabase:
-          name: fintrack-db
-          property: password
-      - key: EUREKA_HOST
-        fromService:
-          name: fintrack-config
-          type: web
-          property: host
-      - key: EUREKA_USERNAME
-        sync: false
-      - key: EUREKA_PASSWORD
-        sync: false
-      - key: FINTRACK_JWT_SECRET
-        sync: false
-      - key: GEMINI_API_KEY
-        sync: false
-      - key: RENDER_EXTERNAL_HOSTNAME
-        fromService:
-          name: fintrack-planning
-          type: web
-          property: host
+          # ── Auth Service ──────────────────────────────────────────────────────
+          - type: web
+            name: fintrack-auth
+            runtime: docker
+            repo: https://github.com/Hieule-kid/FinTrack
+            plan: free
+            region: singapore
+            dockerContext: .
+            dockerfilePath: ./auth-service/Dockerfile
+            autoDeployTrigger: commit
+            envVars:
+              - key: FINTRACK_DEV_ENV
+                sync: false
+              - key: POSTGRES_URL
+                fromDatabase:
+                  name: fintrack-db
+                  property: connectionString
+              - key: POSTGRES_USERNAME
+                fromDatabase:
+                  name: fintrack-db
+                  property: user
+              - key: POSTGRES_PASSWORD
+                fromDatabase:
+                  name: fintrack-db
+                  property: password
+              - key: EUREKA_HOST
+                fromService:
+                  name: fintrack-config
+                  type: web
+                  property: host
+              - key: EUREKA_USERNAME
+                sync: false
+              - key: EUREKA_PASSWORD
+                sync: false
+              - key: FINTRACK_JWT_SECRET
+                sync: false
+              - key: RENDER_EXTERNAL_HOSTNAME
+                fromService:
+                  name: fintrack-auth
+                  type: web
+                  property: host
 
-  # ── API Gateway ─────────────────────────────────────────────────────────────
-  - type: web
-    name: fintrack-gateway
-    runtime: docker
-    region: singapore
-    plan: free
-    dockerfilePath: ./gateway-service/Dockerfile
-    envVars:
-      - key: EUREKA_HOST
-        fromService:
-          name: fintrack-config
-          type: web
-          property: host
-      - key: EUREKA_USERNAME
-        sync: false
-      - key: EUREKA_PASSWORD
-        sync: false
-      - key: FRONTEND_ORIGIN
-        sync: false
-      - key: RENDER_EXTERNAL_HOSTNAME
-        fromService:
-          name: fintrack-gateway
-          type: web
-          property: host
+          # ── Planning Service ──────────────────────────────────────────────────
+          - type: web
+            name: fintrack-planning
+            runtime: docker
+            repo: https://github.com/Hieule-kid/FinTrack
+            plan: free
+            region: singapore
+            dockerContext: .
+            dockerfilePath: ./planning-service/Dockerfile
+            autoDeployTrigger: commit
+            envVars:
+              - key: FINTRACK_DEV_ENV
+                sync: false
+              - key: POSTGRES_URL
+                fromDatabase:
+                  name: fintrack-db
+                  property: connectionString
+              - key: POSTGRES_USERNAME
+                fromDatabase:
+                  name: fintrack-db
+                  property: user
+              - key: POSTGRES_PASSWORD
+                fromDatabase:
+                  name: fintrack-db
+                  property: password
+              - key: EUREKA_HOST
+                fromService:
+                  name: fintrack-config
+                  type: web
+                  property: host
+              - key: EUREKA_USERNAME
+                sync: false
+              - key: EUREKA_PASSWORD
+                sync: false
+              - key: FINTRACK_JWT_SECRET
+                sync: false
+              - key: GEMINI_API_KEY
+                sync: false
+              - key: RENDER_EXTERNAL_HOSTNAME
+                fromService:
+                  name: fintrack-planning
+                  type: web
+                  property: host
+
+          # ── API Gateway ───────────────────────────────────────────────────────
+          - type: web
+            name: fintrack-gateway
+            runtime: docker
+            repo: https://github.com/Hieule-kid/FinTrack
+            plan: free
+            region: singapore
+            dockerContext: .
+            dockerfilePath: ./gateway-service/Dockerfile
+            autoDeployTrigger: commit
+            envVars:
+              - key: FINTRACK_DEV_ENV
+                sync: false
+              - key: EUREKA_HOST
+                fromService:
+                  name: fintrack-config
+                  type: web
+                  property: host
+              - key: EUREKA_USERNAME
+                sync: false
+              - key: EUREKA_PASSWORD
+                sync: false
+              - key: FRONTEND_ORIGIN
+                sync: false
+              - key: RENDER_EXTERNAL_HOSTNAME
+                fromService:
+                  name: fintrack-gateway
+                  type: web
+                  property: host
