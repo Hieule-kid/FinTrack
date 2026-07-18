@@ -5,15 +5,16 @@ services:
     image: postgres:16-alpine
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: fintrack_auth, fintrack_planning     # default DB; other DBs are created by each service
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: postgres        # default db; init.sql creates the app databases
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -27,7 +28,6 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: admin
-      # Auto-register the PostgreSQL server on first launch
       PGADMIN_SERVER_JSON_FILE: /pgadmin4/servers.json
     volumes:
       - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
@@ -48,13 +48,13 @@ services:
     image: fintrack/config-service:latest
     restart: always
     environment:
-      EUREKA_USERNAME: eureka
-      EUREKA_PASSWORD: eureka123
+      EUREKA_USERNAME: ${EUREKA_USERNAME}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD}
       EUREKA_HOST: config-service
     ports:
       - "8761:8761"
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://eureka:eureka123@localhost:8761/actuator/health | grep UP || exit 1"]
+      test: ["CMD-SHELL", "curl -sf http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@localhost:8761/actuator/health | grep UP || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 8
@@ -70,12 +70,12 @@ services:
     restart: always
     environment:
       POSTGRES_URL: jdbc:postgresql://db:5432/fintrack_auth
-      POSTGRES_USERNAME: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USERNAME: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       EUREKA_HOST: config-service
-      EUREKA_USERNAME: eureka
-      EUREKA_PASSWORD: eureka123
-      FINTRACK_JWT_SECRET: fintrack-super-secret-key-change-me-in-prod-123
+      EUREKA_USERNAME: ${EUREKA_USERNAME}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD}
+      FINTRACK_JWT_SECRET: ${FINTRACK_JWT_SECRET}
     ports:
       - "8081:8081"
     depends_on:
@@ -95,13 +95,13 @@ services:
     restart: always
     environment:
       POSTGRES_URL: jdbc:postgresql://db:5432/fintrack_planning
-      POSTGRES_USERNAME: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USERNAME: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       EUREKA_HOST: config-service
-      EUREKA_USERNAME: eureka
-      EUREKA_PASSWORD: eureka123
-      # Must match auth-service's secret — planning-service only validates tokens
-      FINTRACK_JWT_SECRET: fintrack-super-secret-key-change-me-in-prod-123
+      EUREKA_USERNAME: ${EUREKA_USERNAME}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD}
+      FINTRACK_JWT_SECRET: ${FINTRACK_JWT_SECRET}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
     ports:
       - "8090:8090"
     depends_on:
@@ -121,10 +121,10 @@ services:
     restart: always
     environment:
       EUREKA_HOST: config-service
-      EUREKA_USERNAME: eureka
-      EUREKA_PASSWORD: eureka123
+      EUREKA_USERNAME: ${EUREKA_USERNAME}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN}
     ports:
-      # Keep 8080 for pgAdmin, expose gateway on 8088
       - "8088:8080"
     depends_on:
       config-service:
