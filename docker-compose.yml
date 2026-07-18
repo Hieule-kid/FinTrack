@@ -69,7 +69,7 @@ services:
     image: fintrack/auth-service:latest
     restart: always
     environment:
-      POSTGRES_URL: jdbc:postgresql://db:5432/fintrack_auth
+      POSTGRES_URL: postgresql://db:5432/fintrack_auth
       POSTGRES_USERNAME: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       EUREKA_HOST: config-service
@@ -94,7 +94,7 @@ services:
     image: fintrack/planning-service:latest
     restart: always
     environment:
-      POSTGRES_URL: jdbc:postgresql://db:5432/fintrack_planning
+      POSTGRES_URL: postgresql://db:5432/fintrack_planning
       POSTGRES_USERNAME: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       EUREKA_HOST: config-service
