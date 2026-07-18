@@ -22,8 +22,6 @@ projects:
                 sync: false
               - key: EUREKA_PASSWORD
                 sync: false
-              - key: EUREKA_HOST
-                value: 0.0.0.0
 
           # ── Auth Service ──────────────────────────────────────────────────────
           - type: web
@@ -44,11 +42,8 @@ projects:
                 sync: false
               - key: POSTGRES_PASSWORD
                 sync: false
-              - key: EUREKA_HOST
-                fromService:
-                  name: fintrack-config
-                  type: web
-                  property: host
+              - key: EUREKA_DEFAULT_ZONE
+                sync: false
               - key: EUREKA_USERNAME
                 sync: false
               - key: EUREKA_PASSWORD
@@ -80,11 +75,8 @@ projects:
                 sync: false
               - key: POSTGRES_PASSWORD
                 sync: false
-              - key: EUREKA_HOST
-                fromService:
-                  name: fintrack-config
-                  type: web
-                  property: host
+              - key: EUREKA_DEFAULT_ZONE
+                sync: false
               - key: EUREKA_USERNAME
                 sync: false
               - key: EUREKA_PASSWORD
@@ -112,11 +104,8 @@ projects:
             envVars:
               - key: FINTRACK_DEV_ENV
                 sync: false
-              - key: EUREKA_HOST
-                fromService:
-                  name: fintrack-config
-                  type: web
-                  property: host
+              - key: EUREKA_DEFAULT_ZONE
+                sync: false
               - key: EUREKA_USERNAME
                 sync: false
               - key: EUREKA_PASSWORD
