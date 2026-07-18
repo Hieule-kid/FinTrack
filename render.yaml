@@ -4,13 +4,6 @@ projects:
     environments:
       - name: Production
 
-        databases:
-          - name: fintrack-db
-            databaseName: fintrack
-            user: fintrack
-            plan: free
-            region: singapore
-
         services:
           # ── Eureka / Config Service ───────────────────────────────────────────
           - type: web
@@ -45,26 +38,12 @@ projects:
             envVars:
               - key: FINTRACK_DEV_ENV
                 sync: false
-              - key: POSTGRES_HOST
-                fromDatabase:
-                  name: fintrack-db
-                  property: host
-              - key: POSTGRES_PORT
-                fromDatabase:
-                  name: fintrack-db
-                  property: port
-              - key: POSTGRES_DB_NAME
-                fromDatabase:
-                  name: fintrack-db
-                  property: database
+              - key: POSTGRES_URL
+                sync: false
               - key: POSTGRES_USERNAME
-                fromDatabase:
-                  name: fintrack-db
-                  property: user
+                sync: false
               - key: POSTGRES_PASSWORD
-                fromDatabase:
-                  name: fintrack-db
-                  property: password
+                sync: false
               - key: EUREKA_HOST
                 fromService:
                   name: fintrack-config
@@ -95,26 +74,12 @@ projects:
             envVars:
               - key: FINTRACK_DEV_ENV
                 sync: false
-              - key: POSTGRES_HOST
-                fromDatabase:
-                  name: fintrack-db
-                  property: host
-              - key: POSTGRES_PORT
-                fromDatabase:
-                  name: fintrack-db
-                  property: port
-              - key: POSTGRES_DB_NAME
-                fromDatabase:
-                  name: fintrack-db
-                  property: database
+              - key: POSTGRES_URL
+                sync: false
               - key: POSTGRES_USERNAME
-                fromDatabase:
-                  name: fintrack-db
-                  property: user
+                sync: false
               - key: POSTGRES_PASSWORD
-                fromDatabase:
-                  name: fintrack-db
-                  property: password
+                sync: false
               - key: EUREKA_HOST
                 fromService:
                   name: fintrack-config

@@ -8,7 +8,7 @@ spring:
   # ── PostgreSQL Data Source ────────────────────────────────────────────────
   datasource:
     # Override with env var: POSTGRES_URL
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB_NAME:fintrack_auth}
+    url: ${POSTGRES_URL:jdbc:postgresql://localhost:5432/fintrack_auth}
     username: ${POSTGRES_USERNAME:postgres}
     password: ${POSTGRES_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
