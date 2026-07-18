@@ -45,10 +45,18 @@ projects:
             envVars:
               - key: FINTRACK_DEV_ENV
                 sync: false
-              - key: POSTGRES_URL
+              - key: POSTGRES_HOST
                 fromDatabase:
                   name: fintrack-db
-                  property: connectionString
+                  property: host
+              - key: POSTGRES_PORT
+                fromDatabase:
+                  name: fintrack-db
+                  property: port
+              - key: POSTGRES_DB_NAME
+                fromDatabase:
+                  name: fintrack-db
+                  property: database
               - key: POSTGRES_USERNAME
                 fromDatabase:
                   name: fintrack-db
@@ -87,10 +95,18 @@ projects:
             envVars:
               - key: FINTRACK_DEV_ENV
                 sync: false
-              - key: POSTGRES_URL
+              - key: POSTGRES_HOST
                 fromDatabase:
                   name: fintrack-db
-                  property: connectionString
+                  property: host
+              - key: POSTGRES_PORT
+                fromDatabase:
+                  name: fintrack-db
+                  property: port
+              - key: POSTGRES_DB_NAME
+                fromDatabase:
+                  name: fintrack-db
+                  property: database
               - key: POSTGRES_USERNAME
                 fromDatabase:
                   name: fintrack-db
