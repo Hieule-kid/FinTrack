@@ -26,20 +26,6 @@ import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Implementation of {@link AuthService}.
- *
- * <p>Handles the full authentication lifecycle:
- * <ol>
- *   <li>Registration with BCrypt password hashing</li>
- *   <li>Login — credential validation + JWT access token + refresh token issuance</li>
- *   <li>Token refresh (validates stored refresh token, issues new access token)</li>
- *   <li>Logout (revokes all refresh tokens for the user)</li>
- * </ol>
- *
- * @author FinTrack Team
- * @since 1.0.0
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -53,22 +39,6 @@ public class AuthServiceImpl implements AuthService {
     @Value("${fintrack.jwt.refresh-token-expiry-days:7}")
     private int refreshTokenExpiryDays;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Register
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p>Steps:
-     * <ol>
-     *   <li>Check for duplicate username/email</li>
-     *   <li>Hash the password with BCrypt</li>
-     *   <li>Assign default {@code ROLE_USER}</li>
-     *   <li>Persist the user</li>
-     *   <li>Return public profile</li>
-     * </ol>
-     */
     @Override
     @Transactional
     public UserResponse register(RegisterRequest request) {
@@ -95,14 +65,6 @@ public class AuthServiceImpl implements AuthService {
         return toUserResponse(savedUser);
     }
 
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Refresh
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /**
-     * {@inheritDoc}
-     */
     @Override
     @Transactional
     public AuthResponse refresh(RefreshTokenRequest request) {
@@ -122,13 +84,6 @@ public class AuthServiceImpl implements AuthService {
         return buildAuthResponse(user);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Logout
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /**
-     * {@inheritDoc}
-     */
     @Override
     @Transactional
     public void logout(String userId) {
@@ -136,13 +91,6 @@ public class AuthServiceImpl implements AuthService {
         log.info("User {} logged out — all refresh tokens revoked", userId);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Get profile
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /**
-     * {@inheritDoc}
-     */
     @Override
     @Cacheable(value = "userProfiles", key = "#userId")
     public UserResponse getProfile(String userId) {
@@ -151,13 +99,6 @@ public class AuthServiceImpl implements AuthService {
         return toUserResponse(user);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Private helpers
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /**
-     * Builds a full {@link AuthResponse} — generates JWT + persists refresh token.
-     */
     private AuthResponse buildAuthResponse(User user) {
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = createAndSaveRefreshToken(user);
@@ -171,9 +112,6 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
-    /**
-     * Creates a new {@link RefreshToken}, persists it, and returns the token string.
-     */
     private String createAndSaveRefreshToken(User user) {
         String tokenValue = UUID.randomUUID().toString();
 
@@ -187,7 +125,6 @@ public class AuthServiceImpl implements AuthService {
         return tokenValue;
     }
 
-    /** Maps a {@link User} entity to a public {@link UserResponse} DTO. */
     private UserResponse toUserResponse(User user) {
         return UserResponse.builder()
                 .id(user.getId())
@@ -200,18 +137,11 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p>Lookup order: username first, then email. The password is verified
-     * against the BCrypt-hashed value stored in the database. On success,
-     * a new JWT access token and a persisted refresh token are issued.
-     */
     @Override
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByUsernameAndDeletedFalse(request.getEmailOrUsername())
                 .or(() -> userRepository.findByEmailAndDeletedFalse(request.getEmailOrUsername()))
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_CREDENTIALS));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new AppException(ErrorCode.INVALID_CREDENTIALS);
@@ -220,4 +150,3 @@ public class AuthServiceImpl implements AuthService {
         return buildAuthResponse(user);
     }
 }
-

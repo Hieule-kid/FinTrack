@@ -13,8 +13,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class RefreshTokenRequest {
-
-    /** The refresh token previously issued by the login endpoint. */
     @NotBlank(message = "Refresh token is required")
     private String refreshToken;
 }

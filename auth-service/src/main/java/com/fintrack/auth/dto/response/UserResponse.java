@@ -11,14 +11,6 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.Set;
 
-/**
- * Public-facing user profile — safe to return in API responses.
- *
- * <p>Never include {@code password} or any sensitive field in this DTO.
- *
- * @author FinTrack Team
- * @since 1.0.0
- */
 @Getter
 @Builder
 @NoArgsConstructor

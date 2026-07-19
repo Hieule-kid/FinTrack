@@ -42,6 +42,17 @@ spring:
             connect-timeout: ${PLANNING_ROUTE_CONNECT_TIMEOUT_MS:3000}
             response-timeout: ${PLANNING_ROUTE_RESPONSE_TIMEOUT_MS:10000}
 
+# Public auth endpoints are limited at the edge before they are forwarded to auth-service.
+# This in-memory limiter is per gateway instance; use a Redis-backed limiter when scaling out.
+fintrack:
+  gateway:
+    rate-limit:
+      ttl-seconds: ${AUTH_RATE_LIMIT_TTL_SECONDS:60}
+      login-per-window: ${AUTH_LOGIN_RATE_LIMIT:10}
+      register-per-window: ${AUTH_REGISTER_RATE_LIMIT:5}
+      refresh-per-window: ${AUTH_REFRESH_RATE_LIMIT:20}
+      trust-forwarded-for: ${TRUST_X_FORWARDED_FOR:false}
+
 eureka:
   client:
     service-url:
@@ -67,4 +78,3 @@ logging:
   level:
     org.springframework.cloud.gateway: INFO
     reactor.netty.http.client: INFO
-

@@ -12,7 +12,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
@@ -26,14 +26,14 @@ services:
     image: dpage/pgadmin4:latest
     restart: always
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:?Set PGADMIN_DEFAULT_EMAIL in .env}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:?Set PGADMIN_DEFAULT_PASSWORD in .env}
       PGADMIN_SERVER_JSON_FILE: /pgadmin4/servers.json
     volumes:
       - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
       - pgadmin_data:/var/lib/pgadmin
     ports:
-      - "8080:80"
+      - "127.0.0.1:8080:80"
     depends_on:
       db:
         condition: service_healthy
@@ -52,7 +52,7 @@ services:
       EUREKA_PASSWORD: ${EUREKA_PASSWORD}
       EUREKA_HOST: config-service
     ports:
-      - "8761:8761"
+      - "127.0.0.1:8761:8761"
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@localhost:8761/actuator/health | grep UP || exit 1"]
       interval: 15s
@@ -77,7 +77,7 @@ services:
       EUREKA_PASSWORD: ${EUREKA_PASSWORD}
       FINTRACK_JWT_SECRET: ${FINTRACK_JWT_SECRET}
     ports:
-      - "8081:8081"
+      - "127.0.0.1:8081:8081"
     depends_on:
       db:
         condition: service_healthy
@@ -103,7 +103,7 @@ services:
       FINTRACK_JWT_SECRET: ${FINTRACK_JWT_SECRET}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
     ports:
-      - "8090:8090"
+      - "127.0.0.1:8090:8090"
     depends_on:
       db:
         condition: service_healthy
