@@ -58,11 +58,12 @@ eureka:
     instance-id: ${spring.application.name}:${server.port}
 
 # ── JWT ───────────────────────────────────────────────────────────────────
-# Required at startup; use an unpredictable 32+ character value injected via
-# FINTRACK_JWT_SECRET. JwtService also rejects weak/placeholder values.
+# For localhost only, a shared development secret lets the services start
+# without an environment file. Set FINTRACK_JWT_SECRET to an unpredictable
+# 32+ character value in every deployed environment.
 fintrack:
   jwt:
-    secret: ${FINTRACK_JWT_SECRET}
+    secret: ${FINTRACK_JWT_SECRET:fintrack-local-development-jwt-secret-2026}
     # Access token: 15 minutes (900,000 ms)
     access-token-expiry-ms: ${FINTRACK_JWT_ACCESS_EXPIRY_MS:900000}
     # Refresh token TTL in days
