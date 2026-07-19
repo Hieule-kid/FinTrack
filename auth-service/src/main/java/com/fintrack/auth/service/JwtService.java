@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
@@ -17,19 +18,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-/**
- * Stateless JWT utility service.
- *
- * <p>Uses JJWT 0.12.x fluent API with HMAC-SHA256 signing.
- * The secret key is loaded from {@code application.yml} and must be
- * <strong>at least 256 bits (32 bytes)</strong> for HS256.
- *
- * <p>This service handles only JWT operations — it does NOT touch the database.
- * Store-level operations (refresh token persistence) are in {@code AuthServiceImpl}.
- *
- * @author FinTrack Team
- * @since 1.0.0
- */
 @Slf4j
 @Service
 public class JwtService {
@@ -40,9 +28,17 @@ public class JwtService {
     @Value("${fintrack.jwt.access-token-expiry-ms}")
     private long accessTokenExpiryMs;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Token generation
-    // ─────────────────────────────────────────────────────────────────────────
+    /**
+     * Refuse to run without a real production secret. A predictable fallback would
+     * allow anyone who has the source code to forge access tokens.
+     */
+    @PostConstruct
+    void validateSecret() {
+        if (secret == null || secret.length() < 32 || secret.contains("change-me")) {
+            throw new IllegalStateException(
+                    "FINTRACK_JWT_SECRET must be set to an unpredictable value of at least 32 characters");
+        }
+    }
 
     /**
      * Generates an access token with the subject set to the username.
@@ -52,8 +48,6 @@ public class JwtService {
      */
     public String generateAccessToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
-
-        // Add safe, useful identity claims for downstream services.
         claims.put("username", userDetails.getUsername());
         claims.put(
                 "roles",
@@ -114,10 +108,6 @@ public class JwtService {
         return extractExpiration(token).before(new Date());
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Claims extraction
-    // ─────────────────────────────────────────────────────────────────────────
-
     /**
      * Extracts the {@code sub} (subject / username) claim from the token.
      *
@@ -162,10 +152,6 @@ public class JwtService {
         return accessTokenExpiryMs / 1000;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Private helpers
-    // ─────────────────────────────────────────────────────────────────────────
-
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .verifyWith(getSigningKey())
@@ -179,4 +165,3 @@ public class JwtService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }
-

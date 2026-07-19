@@ -60,7 +60,7 @@ eureka:
 # The secret MUST match auth-service's FINTRACK_JWT_SECRET so signatures verify.
 fintrack:
   jwt:
-    secret: ${FINTRACK_JWT_SECRET:fintrack-super-secret-key-change-me-in-prod-123}
+    secret: ${FINTRACK_JWT_SECRET}
 
 management:
   endpoints:

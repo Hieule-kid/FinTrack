@@ -15,20 +15,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * REST controller for user profile operations.
- *
- * <p>Base path: {@code /api/v1/users}. All endpoints require a valid JWT Bearer token
- * issued by this service. The authenticated user's details are injected via
- * {@link AuthenticationPrincipal}.
- *
- * <p>Note: Profile retrieval is also available at {@code GET /api/v1/auth/me} —
- * this controller provides a dedicated, more REST-idiomatic route under the
- * {@code /users} namespace.
- *
- * @author FinTrack Team
- * @since 1.0.0
- */
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor

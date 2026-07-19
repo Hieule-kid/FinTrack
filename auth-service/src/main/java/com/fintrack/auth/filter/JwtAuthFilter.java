@@ -20,19 +20,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-/**
- * JWT Authentication Filter — runs once per request.
- *
- * <p>Extracts and validates the JWT from the {@code Authorization: Bearer <token>}
- * header. If valid, populates the {@link SecurityContextHolder} so downstream
- * filters and controllers can call {@code SecurityContextHolder.getContext().getAuthentication()}.
- *
- * <p>Requests without a token (or with an invalid token) simply proceed without
- * authentication — Spring Security will enforce protection at the method/path level.
- *
- * @author FinTrack Team
- * @since 1.0.0
- */
 @Slf4j
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {

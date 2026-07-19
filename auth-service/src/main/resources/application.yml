@@ -58,11 +58,11 @@ eureka:
     instance-id: ${spring.application.name}:${server.port}
 
 # ── JWT ───────────────────────────────────────────────────────────────────
-# IMPORTANT: Replace the secret in production with a strong random key (32+ chars)
-# Inject via environment variable: FINTRACK_JWT_SECRET
+# Required at startup; use an unpredictable 32+ character value injected via
+# FINTRACK_JWT_SECRET. JwtService also rejects weak/placeholder values.
 fintrack:
   jwt:
-    secret: ${FINTRACK_JWT_SECRET:fintrack-super-secret-key-change-me-in-prod-123}
+    secret: ${FINTRACK_JWT_SECRET}
     # Access token: 15 minutes (900,000 ms)
     access-token-expiry-ms: ${FINTRACK_JWT_ACCESS_EXPIRY_MS:900000}
     # Refresh token TTL in days
@@ -99,4 +99,3 @@ springdoc:
     persist-authorization: true
     # Disable the "Try it out" toggle so it's always enabled
     try-it-out-enabled: true
-

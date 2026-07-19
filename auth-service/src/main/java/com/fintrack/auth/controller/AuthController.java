@@ -40,10 +40,6 @@ public class AuthController {
 
     private final AuthService authService;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Public endpoints
-    // ─────────────────────────────────────────────────────────────────────────
-
     @Operation(
         summary = "Register a new user account",
         description = "Creates a new user with ROLE_USER. Returns the public profile (no tokens). Use `/login/start` to begin the login flow."
@@ -93,28 +89,6 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(authResponse, "Token refreshed"));
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Protected endpoints — require valid JWT
-    // ─────────────────────────────────────────────────────────────────────────
-
-    @Operation(
-        summary = "Get current user profile",
-        description = "Returns the authenticated user's public profile. Requires a valid Bearer JWT.",
-        security = @SecurityRequirement(name = "Bearer Authentication")
-    )
-    @ApiResponses({
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Profile returned"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Missing or invalid JWT")
-    })
-    @GetMapping("/me")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<UserResponse>> getProfile(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        com.fintrack.auth.model.User user = (com.fintrack.auth.model.User) userDetails;
-        UserResponse profile = authService.getProfile(user.getId());
-        return ResponseEntity.ok(ApiResponse.success(profile));
-    }
-
     @Operation(
         summary = "Logout — revoke all sessions",
         description = "Invalidates all refresh tokens for the current user. Access tokens remain valid until they expire naturally.",
@@ -133,4 +107,3 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 }
-
