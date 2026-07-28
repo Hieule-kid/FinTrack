@@ -15,6 +15,7 @@ projects:
             dockerContext: .
             dockerfilePath: ./config-service/Dockerfile
             autoDeployTrigger: commit
+            port: 8761
             envVars:
               - key: FINTRACK_DEV_ENV
                 sync: false
@@ -33,6 +34,7 @@ projects:
             dockerContext: .
             dockerfilePath: ./auth-service/Dockerfile
             autoDeployTrigger: commit
+            port: 8081
             envVars:
               - key: FINTRACK_DEV_ENV
                 sync: false
@@ -66,6 +68,7 @@ projects:
             dockerContext: .
             dockerfilePath: ./planning-service/Dockerfile
             autoDeployTrigger: commit
+            port: 8090
             envVars:
               - key: FINTRACK_DEV_ENV
                 sync: false
@@ -101,6 +104,7 @@ projects:
             dockerContext: .
             dockerfilePath: ./gateway-service/Dockerfile
             autoDeployTrigger: commit
+            port: 8080
             envVars:
               - key: FINTRACK_DEV_ENV
                 sync: false

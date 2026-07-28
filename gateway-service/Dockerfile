@@ -25,4 +25,5 @@ RUN ./mvnw package -pl gateway-service -am -B -DskipTests -q
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=build /workspace/gateway-service/target/gateway-service-*.jar app.jar
+EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

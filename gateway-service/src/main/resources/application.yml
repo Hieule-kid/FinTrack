@@ -59,11 +59,16 @@ eureka:
       defaultZone: ${EUREKA_DEFAULT_ZONE:http://${EUREKA_USERNAME:eureka}:${EUREKA_PASSWORD:eureka123}@${EUREKA_HOST:localhost}:8761/eureka/}
     register-with-eureka: true
     fetch-registry: true
+    initial-instance-info-replication-interval-seconds: 10
+    instance-info-replication-interval-seconds: 10
+    registry-fetch-interval-seconds: 10
   instance:
     prefer-ip-address: false
     hostname: ${RENDER_EXTERNAL_HOSTNAME:localhost}
     non-secure-port: ${server.port}
     instance-id: ${spring.application.name}:${server.port}
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
 
 management:
   endpoints:
