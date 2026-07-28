@@ -22,10 +22,12 @@ eureka:
     service-url:
       defaultZone: http://${spring.security.user.name}:${spring.security.user.password}@${eureka.instance.hostname}:${server.port}/eureka/
   server:
-    # Wait time before starting to evict instances (ms) — increase in prod
+    # No wait on startup so clients can register immediately
     wait-time-in-ms-when-sync-empty: 0
-    # Disable self-preservation in dev (enable in production!)
+    # Disabled so stale instances are evicted promptly after spin-up (free tier)
     enable-self-preservation: false
+    # Evict dead instances every 5 seconds (default 60s)
+    eviction-interval-timer-in-ms: 5000
 
 management:
   endpoints:

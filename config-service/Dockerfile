@@ -25,4 +25,5 @@ RUN ./mvnw package -pl config-service -am -B -DskipTests -q
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=build /workspace/config-service/target/config-service-*.jar app.jar
+EXPOSE 8761
 ENTRYPOINT ["java", "-jar", "app.jar"]
