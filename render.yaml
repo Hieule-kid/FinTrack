@@ -52,6 +52,8 @@ projects:
                 sync: false
               - key: FINTRACK_JWT_SECRET
                 sync: false
+              - key: FRONTEND_ORIGIN
+                sync: false
               - key: RENDER_EXTERNAL_HOSTNAME
                 fromService:
                   name: fintrack-auth
@@ -88,36 +90,10 @@ projects:
                 sync: false
               - key: GEMINI_API_KEY
                 sync: false
-              - key: RENDER_EXTERNAL_HOSTNAME
-                fromService:
-                  name: fintrack-planning
-                  type: web
-                  property: host
-
-          # ── API Gateway ───────────────────────────────────────────────────────
-          - type: web
-            name: fintrack-gateway
-            runtime: docker
-            repo: https://github.com/Hieule-kid/FinTrack
-            plan: free
-            region: singapore
-            dockerContext: .
-            dockerfilePath: ./gateway-service/Dockerfile
-            autoDeployTrigger: commit
-            port: 8080
-            envVars:
-              - key: FINTRACK_DEV_ENV
-                sync: false
-              - key: EUREKA_DEFAULT_ZONE
-                sync: false
-              - key: EUREKA_USERNAME
-                sync: false
-              - key: EUREKA_PASSWORD
-                sync: false
               - key: FRONTEND_ORIGIN
                 sync: false
               - key: RENDER_EXTERNAL_HOSTNAME
                 fromService:
-                  name: fintrack-gateway
+                  name: fintrack-planning
                   type: web
                   property: host

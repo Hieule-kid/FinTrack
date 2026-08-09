@@ -84,6 +84,10 @@ management:
     health:
       show-details: when-authorized
 
+app:
+  cors:
+    allowed-origin: ${FRONTEND_ORIGIN:http://localhost:3000}
+
 logging:
   level:
     com.fintrack.auth: DEBUG
