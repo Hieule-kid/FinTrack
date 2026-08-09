@@ -31,7 +31,6 @@
          ============================================================ -->
     <modules>
         <module>config-service</module>
-        <module>gateway-service</module>
         <module>core</module>
         <module>auth-service</module>
         <module>planning-service</module>
