@@ -71,8 +71,6 @@ public class TemplateServiceImpl implements TemplateService {
     @Override
     public TemplateResponse findById(String id) {
         return templateRepository.findById(id)
-                // Only return non-deleted documents
-                .filter(entity -> !entity.isDeleted())
                 .map(this::toResponse)
                 .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND,
                         "Template item not found with id: " + id));
@@ -88,7 +86,7 @@ public class TemplateServiceImpl implements TemplateService {
                 : Sort.by(sortBy).descending();
 
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<TemplateEntity> entityPage = templateRepository.findByDeletedFalse(pageable);
+        Page<TemplateEntity> entityPage = templateRepository.findAll(pageable);
 
         return PageResponse.of(entityPage.map(this::toResponse));
     }
@@ -105,7 +103,6 @@ public class TemplateServiceImpl implements TemplateService {
     @Override
     public TemplateResponse update(String id, UpdateTemplateRequest request) {
         TemplateEntity entity = templateRepository.findById(id)
-                .filter(e -> !e.isDeleted())
                 .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND,
                         "Template item not found with id: " + id));
 
@@ -124,24 +121,20 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // DELETE (soft)
+    // DELETE
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
      * {@inheritDoc}
-     *
-     * <p>Sets {@code deleted = true} — document is NOT physically removed.
      */
     @Override
     public void delete(String id) {
         TemplateEntity entity = templateRepository.findById(id)
-                .filter(e -> !e.isDeleted())
                 .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND,
                         "Template item not found with id: " + id));
 
-        entity.setDeleted(true);
-        templateRepository.save(entity);
-        log.info("Soft-deleted template item: id={}", id);
+        templateRepository.delete(entity);
+        log.info("Deleted template item: id={}", id);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

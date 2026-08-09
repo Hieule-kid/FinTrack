@@ -18,11 +18,4 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface TemplateRepository extends JpaRepository<TemplateEntity, String> {
 
-    /**
-     * Returns a paginated list of non-deleted items.
-     *
-     * @param pageable pagination and sorting parameters
-     * @return a page of non-deleted entities
-     */
-    Page<TemplateEntity> findByDeletedFalse(Pageable pageable);
 }
