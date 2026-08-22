@@ -49,4 +49,12 @@ public interface UserRepository extends JpaRepository<User, String> {
      * @return {@code true} if the email is already in use
      */
     boolean existsByEmailAndDeletedFalse(String email);
+
+    /**
+     * Checks whether an email is already registered by a non-deleted user, ignoring case.
+     *
+     * @param email the email address to check
+     * @return {@code true} if the email is already in use
+     */
+    boolean existsByEmailIgnoreCaseAndDeletedFalse(String email);
 }

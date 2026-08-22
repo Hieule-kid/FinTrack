@@ -3,6 +3,8 @@ package com.fintrack.auth.service;
 import com.fintrack.auth.dto.request.LoginRequest;
 import com.fintrack.auth.dto.request.RefreshTokenRequest;
 import com.fintrack.auth.dto.request.RegisterRequest;
+import com.fintrack.auth.dto.request.UpdateCurrencyRequest;
+import com.fintrack.auth.dto.request.UpdateUserProfileRequest;
 import com.fintrack.auth.dto.response.AuthResponse;
 import com.fintrack.auth.dto.response.UserResponse;
 
@@ -54,6 +56,30 @@ public interface AuthService {
      *         if no user exists with this ID
      */
     UserResponse getProfile(String userId);
+
+    /**
+     * Updates the authenticated user's full name, email, and currency.
+     *
+     * @param userId  the ID of the user to update
+     * @param request the validated profile payload
+     * @return the updated user's public profile
+     * @throws com.fintrack.core.exception.AppException with {@code USER_NOT_FOUND}
+     *         if no user exists with this ID
+     * @throws com.fintrack.core.exception.AppException with {@code DUPLICATE_EMAIL}
+     *         if the email is already used by another user
+     */
+    UserResponse updateProfile(String userId, UpdateUserProfileRequest request);
+
+    /**
+     * Updates only the authenticated user's preferred currency.
+     *
+     * @param userId  the ID of the user to update
+     * @param request the validated currency payload
+     * @return the updated user's public profile
+     * @throws com.fintrack.core.exception.AppException with {@code USER_NOT_FOUND}
+     *         if no user exists with this ID
+     */
+    UserResponse updateCurrency(String userId, UpdateCurrencyRequest request);
 
     /**
      * Authenticates a user with email/username and password, then issues JWT tokens.

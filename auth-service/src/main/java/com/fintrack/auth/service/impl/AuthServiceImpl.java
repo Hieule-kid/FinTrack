@@ -3,6 +3,8 @@ package com.fintrack.auth.service.impl;
 import com.fintrack.auth.dto.request.LoginRequest;
 import com.fintrack.auth.dto.request.RefreshTokenRequest;
 import com.fintrack.auth.dto.request.RegisterRequest;
+import com.fintrack.auth.dto.request.UpdateCurrencyRequest;
+import com.fintrack.auth.dto.request.UpdateUserProfileRequest;
 import com.fintrack.auth.dto.response.AuthResponse;
 import com.fintrack.auth.dto.response.UserResponse;
 import com.fintrack.auth.model.RefreshToken;
@@ -17,7 +19,9 @@ import com.fintrack.core.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -77,8 +81,7 @@ public class AuthServiceImpl implements AuthService {
             throw new AppException(ErrorCode.TOKEN_EXPIRED);
         }
 
-        User user = userRepository.findById(storedToken.getUserId())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        User user = getUserOrThrow(storedToken.getUserId());
 
         refreshTokenRepository.delete(storedToken);
         return buildAuthResponse(user);
@@ -94,9 +97,52 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Cacheable(value = "userProfiles", key = "#userId")
     public UserResponse getProfile(String userId) {
-        User user = userRepository.findById(userId)
+        return toUserResponse(getUserOrThrow(userId));
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = "userProfiles", key = "#userId")
+    public UserResponse updateProfile(String userId, UpdateUserProfileRequest request) {
+        User user = getUserOrThrow(userId);
+
+        if (!user.getEmail().equalsIgnoreCase(request.getEmail())
+                && userRepository.existsByEmailIgnoreCaseAndDeletedFalse(request.getEmail())) {
+            throw new AppException(ErrorCode.DUPLICATE_EMAIL);
+        }
+
+        user.setFullName(request.getFullName());
+        user.setEmail(request.getEmail());
+        user.setCurrency(request.getCurrency());
+
+        User savedUser;
+        try {
+            savedUser = userRepository.save(user);
+        } catch (DataIntegrityViolationException e) {
+            throw new AppException(ErrorCode.DUPLICATE_EMAIL);
+        }
+        log.info("User profile updated: userId={}", userId);
+
+        return toUserResponse(savedUser);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = "userProfiles", key = "#userId")
+    public UserResponse updateCurrency(String userId, UpdateCurrencyRequest request) {
+        User user = getUserOrThrow(userId);
+
+        user.setCurrency(request.getCurrency());
+
+        User savedUser = userRepository.save(user);
+        log.info("User currency updated: userId={}, currency={}", userId, request.getCurrency());
+
+        return toUserResponse(savedUser);
+    }
+
+    private User getUserOrThrow(String userId) {
+        return userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        return toUserResponse(user);
     }
 
     private AuthResponse buildAuthResponse(User user) {

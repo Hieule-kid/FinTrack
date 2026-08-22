@@ -43,7 +43,7 @@ auth-service/src/main/java/com/fintrack/auth/
 │   └── TokenCleanupScheduler.java           # @Scheduled — deletes expired refresh tokens daily at 02:00
 ├── controller/
 │   ├── AuthController.java                  # /api/v1/auth/** — register, login, refresh, me, logout
-│   └── UserController.java                  # /api/v1/users/profile — alternate profile endpoint
+│   └── UserController.java                  # /api/v1/users/profile (GET/PUT), /api/v1/users/currency (PATCH)
 ├── dto/
 │   ├── request/
 │   │   ├── LoginRequest.java                # emailOrUsername + password
@@ -91,6 +91,8 @@ All endpoints under `http://localhost:8081`.
 | `GET` | `/api/v1/auth/me` | Get current user's profile |
 | `POST` | `/api/v1/auth/logout` | Revoke all refresh tokens (all sessions) |
 | `GET` | `/api/v1/users/profile` | Get current user's profile (alternate route) |
+| `PUT` | `/api/v1/users/profile` | Replace current user's fullName, email, and currency (full replace — all fields required) |
+| `PATCH` | `/api/v1/users/currency` | Update only the current user's currency |
 
 ---
 
@@ -178,6 +180,40 @@ All endpoints under `http://localhost:8081`.
 Header: `Authorization: Bearer <accessToken>`
 
 **Response** `204 No Content`
+
+---
+
+### Update Profile
+
+**Request** `PUT /api/v1/users/profile`
+Header: `Authorization: Bearer <accessToken>`
+
+All fields are required — this is a full replace, not a partial update.
+
+```json
+{
+  "fullName": "Alice Smith",
+  "email": "alice@example.com",
+  "currency": "USD"
+}
+```
+
+**Response** `200 OK` — updated `UserResponse`. Returns `409 Conflict` (`DUPLICATE_EMAIL`) if the new email is already used by another account (checked case-insensitively, including a fallback for the race where two concurrent requests claim the same email).
+
+---
+
+### Update Currency
+
+**Request** `PATCH /api/v1/users/currency`
+Header: `Authorization: Bearer <accessToken>`
+
+```json
+{
+  "currency": "VND"
+}
+```
+
+**Response** `200 OK` — updated `UserResponse`.
 
 ---
 
