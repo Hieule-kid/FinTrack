@@ -1,6 +1,9 @@
 services:
 
   # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  # Shared by auth-service and planning-service (in their own repos). Kept here
+  # since config-service doesn't need a DB of its own, but this container is the
+  # natural place to run it for full local-stack dev.
   db:
     image: postgres:16-alpine
     restart: always
@@ -44,13 +47,12 @@ services:
   config-service:
     build:
       context: .
-      dockerfile: config-service/Dockerfile
+      dockerfile: Dockerfile
     image: fintrack/config-service:latest
     restart: always
     environment:
       EUREKA_USERNAME: ${EUREKA_USERNAME}
       EUREKA_PASSWORD: ${EUREKA_PASSWORD}
-      EUREKA_HOST: config-service
     ports:
       - "127.0.0.1:8761:8761"
     healthcheck:
@@ -61,58 +63,11 @@ services:
     networks:
       - fintrack-net
 
-  # ── Auth Service ────────────────────────────────────────────────────────────
-  auth-service:
-    build:
-      context: .
-      dockerfile: auth-service/Dockerfile
-    image: fintrack/auth-service:latest
-    restart: always
-    environment:
-      POSTGRES_URL: jdbc:postgresql://db:5432/fintrack_auth
-      POSTGRES_USERNAME: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      EUREKA_HOST: config-service
-      EUREKA_USERNAME: ${EUREKA_USERNAME}
-      EUREKA_PASSWORD: ${EUREKA_PASSWORD}
-      FINTRACK_JWT_SECRET: ${FINTRACK_JWT_SECRET}
-      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
-    ports:
-      - "127.0.0.1:8081:8081"
-    depends_on:
-      db:
-        condition: service_healthy
-      config-service:
-        condition: service_healthy
-    networks:
-      - fintrack-net
-
-  # ── Planning Service ────────────────────────────────────────────────────────
-  planning-service:
-    build:
-      context: .
-      dockerfile: planning-service/Dockerfile
-    image: fintrack/planning-service:latest
-    restart: always
-    environment:
-      POSTGRES_URL: jdbc:postgresql://db:5432/fintrack_planning
-      POSTGRES_USERNAME: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      EUREKA_HOST: config-service
-      EUREKA_USERNAME: ${EUREKA_USERNAME}
-      EUREKA_PASSWORD: ${EUREKA_PASSWORD}
-      FINTRACK_JWT_SECRET: ${FINTRACK_JWT_SECRET}
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
-      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
-    ports:
-      - "127.0.0.1:8090:8090"
-    depends_on:
-      db:
-        condition: service_healthy
-      config-service:
-        condition: service_healthy
-    networks:
-      - fintrack-net
+# auth-service and planning-service now live in their own repos
+# (Auth_Service_FinTrack, Planning_Service_FinTrack), each with its own
+# docker-compose.yml. To run the full stack locally, start this compose file
+# first (db + pgadmin + config-service), then start each service's own
+# compose file with EUREKA_HOST pointing at this machine.
 
 volumes:
   postgres_data:

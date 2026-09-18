@@ -6,7 +6,9 @@
 
     <!-- ============================================================
          PARENT: Spring Boot Starter Parent
-         Provides default dependency management & plugin configuration
+         Standalone repo — no longer inherits from fintrack-parent
+         (this repo used to be the whole FinTrack monorepo; it now
+         contains only config-service).
          ============================================================ -->
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -15,64 +17,23 @@
         <relativePath/>
     </parent>
 
-    <!-- ============================================================
-         PROJECT IDENTITY
-         ============================================================ -->
     <groupId>com.fintrack</groupId>
-    <artifactId>fintrack-parent</artifactId>
+    <artifactId>config-service</artifactId>
     <version>1.0.0-SNAPSHOT</version>
-    <packaging>pom</packaging>
-    <name>FinTrack :: Parent</name>
-    <description>FinTrack – Personal Finance Management System (Parent POM)</description>
+    <name>FinTrack :: Config Service</name>
+    <description>Service Discovery and Configuration — Eureka Server</description>
 
-    <!-- ============================================================
-         MODULES: All sub-services declared here
-         Order matters: core must be built before services that depend on it
-         ============================================================ -->
-    <modules>
-        <module>config-service</module>
-        <module>core</module>
-        <module>auth-service</module>
-        <module>planning-service</module>
-        <module>service-template</module>
-    </modules>
-
-    <!-- ============================================================
-         GLOBAL PROPERTIES — single source of truth for all versions
-         ============================================================ -->
     <properties>
-        <!-- Java -->
         <java.version>17</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <!-- Spring Cloud -->
         <spring-cloud.version>2024.0.1</spring-cloud.version>
-
-        <!-- Security -->
-        <jjwt.version>0.12.6</jjwt.version>
-
-        <!-- Mapping -->
-        <mapstruct.version>1.6.2</mapstruct.version>
-
-        <!-- API Documentation -->
-        <springdoc.version>2.8.3</springdoc.version>
-
-        <!-- Spring AI -->
-        <spring-ai.version>1.0.0</spring-ai.version>
-
-        <!-- Internal module version (bump all at once) -->
-        <fintrack.version>1.0.0-SNAPSHOT</fintrack.version>
     </properties>
 
-    <!-- ============================================================
-         DEPENDENCY MANAGEMENT — pin versions for all child modules
-         Child modules declare the dependency WITHOUT version tags
-         ============================================================ -->
     <dependencyManagement>
         <dependencies>
-            <!-- Spring Cloud BOM (imports all Spring Cloud versions) -->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
@@ -80,62 +41,28 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-
-            <!-- JWT — io.jsonwebtoken (JJWT 0.12.x new API) -->
-            <dependency>
-                <groupId>io.jsonwebtoken</groupId>
-                <artifactId>jjwt-api</artifactId>
-                <version>${jjwt.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.jsonwebtoken</groupId>
-                <artifactId>jjwt-impl</artifactId>
-                <version>${jjwt.version}</version>
-                <scope>runtime</scope>
-            </dependency>
-            <dependency>
-                <groupId>io.jsonwebtoken</groupId>
-                <artifactId>jjwt-jackson</artifactId>
-                <version>${jjwt.version}</version>
-                <scope>runtime</scope>
-            </dependency>
-
-            <!-- MapStruct — bean mapping (DTO <-> Entity) -->
-            <dependency>
-                <groupId>org.mapstruct</groupId>
-                <artifactId>mapstruct</artifactId>
-                <version>${mapstruct.version}</version>
-            </dependency>
-
-            <!-- FinTrack :: Core (shared library used by all services) -->
-            <dependency>
-                <groupId>com.fintrack</groupId>
-                <artifactId>core</artifactId>
-                <version>${fintrack.version}</version>
-            </dependency>
-
-            <!-- SpringDoc OpenAPI — Swagger UI for Spring Boot 3.x -->
-            <dependency>
-                <groupId>org.springdoc</groupId>
-                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-                <version>${springdoc.version}</version>
-            </dependency>
-
-            <!-- Spring AI BOM — pins all spring-ai artifact versions -->
-            <dependency>
-                <groupId>org.springframework.ai</groupId>
-                <artifactId>spring-ai-bom</artifactId>
-                <version>${spring-ai.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
-    <!-- ============================================================
-         COMMON DEPENDENCIES — present in every child module
-         ============================================================ -->
     <dependencies>
+        <!-- Eureka Server: Service registry for all microservices -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+        </dependency>
+
+        <!-- Actuator: health checks & metrics endpoints -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Security: protect Eureka dashboard with basic auth -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
         <!-- Lombok: compile-time only, not packaged -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -143,7 +70,7 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- Spring Boot Test: standard test scope for all modules -->
+        <!-- Spring Boot Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -151,46 +78,22 @@
         </dependency>
     </dependencies>
 
-    <!-- ============================================================
-         PLUGIN MANAGEMENT — shared build configuration
-         ============================================================ -->
     <build>
-        <pluginManagement>
-            <plugins>
-                <!-- Spring Boot Maven Plugin: repackage executable JAR -->
-                <plugin>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-maven-plugin</artifactId>
-                    <configuration>
-                        <excludes>
-                            <exclude>
-                                <groupId>org.projectlombok</groupId>
-                                <artifactId>lombok</artifactId>
-                            </exclude>
-                        </excludes>
-                    </configuration>
-                </plugin>
-
-                <!-- Maven Compiler: Lombok + MapStruct annotation processor -->
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <configuration>
-                        <annotationProcessorPaths>
-                            <path>
-                                <groupId>org.projectlombok</groupId>
-                                <artifactId>lombok</artifactId>
-                            </path>
-                            <path>
-                                <groupId>org.mapstruct</groupId>
-                                <artifactId>mapstruct-processor</artifactId>
-                                <version>${mapstruct.version}</version>
-                            </path>
-                        </annotationProcessorPaths>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
+        <plugins>
+            <!-- Repackage as executable JAR -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 
 </project>

@@ -4,77 +4,51 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-FinTrack — a Spring Boot 3.4 / Spring Cloud microservices personal finance tracker (branded "FinPlan" in the UI). Java 17, Maven multi-module build, PostgreSQL, Eureka service discovery, JWT auth. No API gateway — each service handles its own CORS directly via a `CorsConfigurationSource` bean (the gateway was removed; see `docs/gateway-service.md` which is now stale).
+This repo is **`config-service`** — the Eureka service discovery server for the FinTrack personal finance tracker (Spring Boot 3.4 / Spring Cloud, branded "FinPlan" in the UI). It used to be the root of a Maven multi-module monorepo containing all 4 services; that monorepo was split into 4 repos, one per service:
 
-This repo is the **backend only**. The frontend (Next.js 16 App Router, React 19, TypeScript, Yarn) lives in a sibling repo at `/Users/hieule/fintrackfe` and is not part of this checkout. It talks to these services exclusively through its own Next.js BFF layer (server actions + `/api/*` route handlers) — the browser never calls `auth-service`/`planning-service` directly, and there is no gateway in between. A fuller cross-repo architecture writeup (DB schema, ER diagram, FE structure, FE↔BE sequence diagrams) is checked in at `.agents/skills/ARCHITECTURE.md` — read it when work spans both repos or touches API contracts.
+| Repo | Contains |
+|------|----------|
+| **Fintrack** (this repo) | `config-service` — Eureka Server, port 8761 |
+| [Core_Service_FinTrack](https://github.com/Hieule-kid/Core_Service_FinTrack) | `core` — shared library (`BaseEntity`, `ApiResponse`, `ErrorCode`, `DateUtils`) |
+| [Auth_Service_FinTrack](https://github.com/Hieule-kid/Auth_Service_FinTrack) | `auth-service` — registration/login/refresh/JWT issuance, port 8081 |
+| [Planning_Service_FinTrack](https://github.com/Hieule-kid/Planning_Service_FinTrack) | `planning-service` — savings plan + milestone management, port 8090 |
 
-## Modules
+`auth-service` and `planning-service` each pull in `core` via a git submodule (not a Maven module in this repo) and reactor-build it together with their own code. `config-service` (this repo) does not depend on `core`. There is no API gateway — each service handles its own CORS directly via a `CorsConfigurationSource` bean.
 
-- `pom.xml` — parent POM, single source of truth for all dependency versions (Spring Boot 3.4.4, Spring Cloud 2024.0.1, JJWT 0.12.6, MapStruct 1.6.2, springdoc 2.8.3, Spring AI 1.0.0).
-- `core/` — shared library (not a runnable service). `BaseEntity`/`BaseService`/`BaseController` generic CRUD scaffolding, `ApiResponse`/`PageResponse` envelopes, `ErrorCode`/`AppException`/`GlobalExceptionHandler` for unified error handling, `DateUtils`.
-- `config-service/` — Eureka Server, port 8761 (dashboard at `http://localhost:8761`, basic auth `eureka`/`eureka123` locally).
-- `auth-service/` — registration/login/refresh/JWT issuance, port 8081. Owns the `fintrack_auth` DB.
-- `planning-service/` — savings plan + milestone management, port 8090. Owns `fintrack_planning` DB. Only *validates* JWTs (shared `FINTRACK_JWT_SECRET`); never issues tokens.
-- `service-template/` — starter template to copy when creating a new service (port 8082 convention).
+This repo (and its 3 siblings) are **backend only**. The frontend (Next.js 16 App Router, React 19, TypeScript, Yarn) lives in a separate repo at `/Users/hieule/fintrackfe` and is not part of this checkout. It talks to these services exclusively through its own Next.js BFF layer (server actions + `/api/*` route handlers) — the browser never calls `auth-service`/`planning-service` directly, and there is no gateway in between. A fuller cross-repo architecture writeup (DB schema, ER diagram, FE structure, FE↔BE sequence diagrams) is checked in at `.agents/skills/ARCHITECTURE.md` — read it when work spans both repos or touches API contracts.
 
-Services must start in order: `config-service` → `auth-service` → `planning-service` (each depends on Eureka being up).
+For architecture conventions shared across all 4 backend repos (layering, `BaseEntity`, error handling, DTO naming, Swagger, etc.), see `CODING_RULES.md` in this repo — it remains the single source of truth even though the services it describes now live in other repos.
+
+## This repo's contents
+
+- `pom.xml` — standalone POM (parent = `spring-boot-starter-parent` directly, no shared `fintrack-parent` anymore).
+- `src/main/java/com/fintrack/config/` — `EurekaServerApplication`, `EurekaSecurityConfig` (HTTP Basic auth on the dashboard, `eureka`/`eureka123` locally).
+- `docker-compose.yml` — Postgres + pgAdmin + this service, for full local-stack dev (the other 3 services run their own compose files alongside this one).
+- `render.yaml` — deploys `fintrack-config` on Render.
 
 ## Common commands
 
 ```bash
-# Infra (Postgres + pgAdmin)
-docker compose up -d db pgadmin
-
-# Build all modules
-./mvnw clean install -DskipTests
-
-# Run a single service
-./mvnw -pl config-service spring-boot:run
-./mvnw -pl auth-service spring-boot:run
-./mvnw -pl planning-service spring-boot:run
-
-# Tests (planning-service is the module with real test coverage)
-./mvnw -pl planning-service test
-./mvnw -pl planning-service test -Dtest=PlanServiceImplTest
-./mvnw -pl planning-service test -Dtest=PlanServiceImplTest#methodName
-
-# Full docker stack
+# Infra + this service
 docker compose up -d
+
+# Or without Docker
+./mvnw spring-boot:run
+
+# Build
+./mvnw clean install -DskipTests
 ```
 
 Eureka registry check: `curl http://eureka:eureka123@localhost:8761/eureka/apps`.
 
-## Architecture conventions (enforced across all services — see CODING_RULES.md)
+Services must start in order: `config-service` (this repo) → `auth-service` → `planning-service` — each depends on Eureka being up. To run the full stack, also clone `Auth_Service_FinTrack` and `Planning_Service_FinTrack` and follow their own READMEs (each has its own `docker-compose.yml` with `EUREKA_HOST` pointed back at this container).
 
-- **Layering is mandatory**: `controller` → `service`/`service/impl` → `repository`. No business logic in controllers, no repository access from controllers, no `@Entity` ever returned from a controller (always map to a response DTO). Constructor injection only (`@RequiredArgsConstructor`), never field `@Autowired`.
-- **Every entity extends `core`'s `BaseEntity`** (UUID id, audit fields, soft delete via a `deleted` boolean — repositories must filter `...AndDeletedFalse` rather than physically deleting rows).
-- **Errors flow through `core`**: throw `AppException(ErrorCode.X)` from services; never catch-and-swallow — let `GlobalExceptionHandler` (`@RestControllerAdvice`) convert it to the `ApiResponse` envelope.
-- **Money is always `BigDecimal`** (never float/double); timestamps are always `LocalDateTime`.
-- **DTO naming**: `Create<Domain>Request`, `Update<Domain>Request`, `<Domain>Response`. Entities/services/controllers follow `<Domain>`, `<Domain>Service`/`<Domain>ServiceImpl`, `<Domain>Controller`.
-- **Config values must use `${ENV_VAR:default}`** with a production-correct default — never hardcode secrets/credentials, and dev defaults must be clearly non-production (e.g. `ddl-auto: ${JPA_DDL_AUTO:update}`, must be `validate` in prod).
-- **Swagger**: every controller has `@Tag`, every endpoint `@Operation`, protected endpoints declare `@SecurityRequirement(name = "Bearer Authentication")`.
-- Full detail and code examples for every rule above live in `CODING_RULES.md` — consult it for anything not summarized here (Javadoc format, logging levels, entity `@Column`/`@Index` conventions, PR checklist).
+## Security model (system-wide, for context)
 
-## Planning-service business rules (non-obvious, computed not stored)
-
-- A plan's target amount is split into milestones (per day/month/year depending on `frequency`), divided evenly with the remainder on the last milestone.
-- Milestone `status` is **never trusted from storage** — it's recomputed on every read from `actualSaved`, effective target, manual-completion flag, and current date, following `COMPLETED` → `OVERDUE` → `PENDING` precedence.
-- When a plan's `recalculateOnMissedDeadline` setting is on, the combined deficit of overdue milestones is redistributed evenly across remaining future milestones — computed live on every read, never persisted.
-- `DELETE /api/v1/plans/{planId}` is a genuine **hard delete** of the plan and its milestones (cascading) — an intentional exception to the soft-delete convention below, added after plans/milestones were found to accumulate indefinitely.
-
-## Errors, validation, scheduling
-
-- `ErrorCode` is numbered by domain: `1xxx` general/access (`1001 UNAUTHENTICATED`, `1002 FORBIDDEN`), `3xxx` auth/user (`3001 INVALID_CREDENTIALS`, `3002 DUPLICATE_EMAIL`), `4xxx` planning (`4001 PLAN_NOT_FOUND`, `4002 MILESTONE_NOT_FOUND`). Follow this numbering when adding new codes for a new domain.
-- Both `auth-service` and `planning-service` refuse to start (`@PostConstruct` guard) if `FINTRACK_JWT_SECRET` is under 32 chars or contains the literal string `"change-me"` — a real, non-default secret is required even locally.
-- `planning-service` ownership checks live in the service layer, not the controller: `getOwnedPlanOrThrow(planId, userId)` throws `FORBIDDEN (1002)` on mismatch rather than relying on a query filter.
-- `MilestoneCalculator.validateCombination()` enforces legal `timeframeCategory`/`frequency`/duration-field combinations before schedule generation (e.g. `SHORT_TERM`/`MID_TERM` only allow `DAILY`/`MONTHLY` and require `durationInMonths`), and generated `periodCount` is capped to `(0, 3650]` to prevent runaway schedules.
-- `TokenCleanupScheduler` (auth-service) deletes expired refresh tokens daily at 02:00 via `@Scheduled(cron=...)`. A Caffeine cache (`userProfiles`, 1000 entries / 300s TTL) backs `getProfile()`.
-
-## Security model
-
-- Access token: JWT, 15 min, kept in memory client-side (never localStorage). Refresh token: UUID, 7 days, HttpOnly cookie, persisted in Postgres, cleaned up daily at 02:00 by `TokenCleanupScheduler` in auth-service.
-- `auth-service` issues tokens; `planning-service` (and any future service) only validates them against the shared `FINTRACK_JWT_SECRET`.
+- Access token: JWT, 15 min, kept in memory client-side (never localStorage). Refresh token: UUID, 7 days, HttpOnly cookie, persisted in Postgres — issued/validated in `auth-service`, not here.
+- `auth-service` issues tokens; `planning-service` only validates them against the shared `FINTRACK_JWT_SECRET`. Neither secret nor DB config exists in this repo.
+- `config-service`'s own dashboard/`/eureka/**` endpoints are protected by HTTP Basic (`EUREKA_USERNAME`/`EUREKA_PASSWORD`), shared by convention with the other two services' Eureka client config.
 
 ## Deployment
 
-Production runs on Render (`render.yaml`), one Docker web service per module, `singapore` region, deployed straight from GitHub on commit — no gateway/proxy in front.
+Production runs on Render (`render.yaml`), one Docker web service per repo, `singapore` region, deployed straight from GitHub on commit — no gateway/proxy in front. This repo only deploys `fintrack-config`; the other two Render services (`fintrack-auth`, `fintrack-planning`) are deployed from their own repos.
