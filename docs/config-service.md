@@ -20,8 +20,7 @@
 ## 🚀 How to Start
 
 ```bash
-cd config-service
-../mvnw spring-boot:run
+./mvnw spring-boot:run
 # ✅ Ready when you see: "Started EurekaServerApplication"
 ```
 
@@ -101,10 +100,12 @@ eureka:
 ## 📁 Source Structure
 
 ```
-config-service/src/main/java/com/fintrack/config/
+src/main/java/com/fintrack/config/
 ├── EurekaServerApplication.java   # Main class — @EnableEurekaServer
 └── EurekaSecurityConfig.java      # HTTP Basic auth + CSRF config
 ```
+
+This repo now contains **only** config-service (it used to be the root of the FinTrack monorepo; `auth-service`, `planning-service`, and `core` were split out into their own repos — see the root `README.md`).
 
 ---
 
@@ -114,13 +115,12 @@ config-service/src/main/java/com/fintrack/config/
 config-service:
   build:
     context: .
-    dockerfile: config-service/Dockerfile
+    dockerfile: Dockerfile
   image: fintrack/config-service:latest
   restart: always
   environment:
     EUREKA_USERNAME: eureka
     EUREKA_PASSWORD: eureka123
-    EUREKA_HOST: config-service
   ports:
     - "8761:8761"
   healthcheck:
@@ -130,5 +130,5 @@ config-service:
     retries: 8
 ```
 
-All other services use `depends_on: config-service: condition: service_healthy` to wait for this service before starting.
+`auth-service` and `planning-service` now live in their own repos, each with their own `docker-compose.yml`; they point `EUREKA_HOST` at wherever this container is reachable from theirs.
 
