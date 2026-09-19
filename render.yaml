@@ -5,7 +5,6 @@ projects:
       - name: Production
 
         services:
-          # ── Eureka / Config Service ───────────────────────────────────────────
           - type: web
             name: fintrack-config
             runtime: docker

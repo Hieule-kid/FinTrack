@@ -1,16 +1,12 @@
 services:
 
-  # ── PostgreSQL ──────────────────────────────────────────────────────────────
-  # Shared by auth-service and planning-service (in their own repos). Kept here
-  # since config-service doesn't need a DB of its own, but this container is the
-  # natural place to run it for full local-stack dev.
   db:
     image: postgres:16-alpine
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: postgres        # default db; init.sql creates the app databases
+      POSTGRES_DB: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -24,7 +20,6 @@ services:
     networks:
       - fintrack-net
 
-  # ── pgAdmin 4 ───────────────────────────────────────────────────────────────
   pgadmin:
     image: dpage/pgadmin4:latest
     restart: always
@@ -43,7 +38,6 @@ services:
     networks:
       - fintrack-net
 
-  # ── Eureka / Config Service ─────────────────────────────────────────────────
   config-service:
     build:
       context: .
@@ -62,12 +56,6 @@ services:
       retries: 8
     networks:
       - fintrack-net
-
-# auth-service and planning-service now live in their own repos
-# (Auth_Service_FinTrack, Planning_Service_FinTrack), each with its own
-# docker-compose.yml. To run the full stack locally, start this compose file
-# first (db + pgadmin + config-service), then start each service's own
-# compose file with EUREKA_HOST pointing at this machine.
 
 volumes:
   postgres_data:

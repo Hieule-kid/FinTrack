@@ -6,8 +6,6 @@ spring:
     name: config-service
   security:
     user:
-      # Change these credentials in production via environment variables:
-      # SPRING_SECURITY_USER_NAME and SPRING_SECURITY_USER_PASSWORD
       name: ${EUREKA_USERNAME:eureka}
       password: ${EUREKA_PASSWORD:eureka123}
 
@@ -15,18 +13,13 @@ eureka:
   instance:
     hostname: ${EUREKA_HOST:localhost}
   client:
-    # Do NOT register the Eureka server with itself
     register-with-eureka: false
-    # Do NOT fetch the registry (server doesn't need to discover others)
     fetch-registry: false
     service-url:
       defaultZone: http://${spring.security.user.name}:${spring.security.user.password}@${eureka.instance.hostname}:${server.port}/eureka/
   server:
-    # No wait on startup so clients can register immediately
     wait-time-in-ms-when-sync-empty: 0
-    # Disabled so stale instances are evicted promptly after spin-up (free tier)
     enable-self-preservation: false
-    # Evict dead instances every 5 seconds (default 60s)
     eviction-interval-timer-in-ms: 5000
 
 management:
