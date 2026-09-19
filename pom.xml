@@ -29,6 +29,10 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
+        <!-- Override spring-boot-starter-parent's managed 1.18.36: too old for
+             this machine's JDK, causes "TypeTag :: UNKNOWN" in IDE tooling. -->
+        <lombok.version>1.18.46</lombok.version>
+
         <spring-cloud.version>2024.0.1</spring-cloud.version>
     </properties>
 
