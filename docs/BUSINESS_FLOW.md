@@ -137,14 +137,16 @@ Thời lượng được kiểm tra theo đúng khoảng của timeframe kể c�
 | Tần suất | Nhãn | Hạn chót |
 |---|---|---|
 | `DAILY` | `Day N` | chính ngày đó |
-| `MONTHLY` | `November 2026` | ngày cuối tháng dương lịch |
-| `ANNUALLY` | `Year N (2026)` | 31/12 năm đó |
+| `MONTHLY` | `November 2026` (bắt đầu ngày 1) / `Month N (25 Nov 2026 – 24 Dec 2026)` | ngày trước `startDate + N tháng` |
+| `ANNUALLY` | `Year N (2027)` (bắt đầu 1/1) / `Year N (Jun 2027 – Jun 2028)` | ngày trước `startDate + N năm` |
 
-⚠️ Mốc đầu tiên của `MONTHLY`/`ANNUALLY` là **tháng/năm dương lịch chứa `startDate`**. Bắt đầu ngày 25/11
-thì mốc 1 chỉ còn 6 ngày để góp đủ 1 phần tháng; bắt đầu tháng 11 với `ANNUALLY` thì mốc "năm 1" chỉ còn ~7 tuần.
+Mỗi kỳ tính **từ `startDate`**, nên mốc đầu tiên luôn đủ một kỳ. Ví dụ bắt đầu 25/11/2026, `MONTHLY`:
+mốc 1 kéo dài 25/11 – 24/12 (nhãn `Month 1 (25 Nov 2026 – 24 Dec 2026)`). Bắt đầu ngày 1 thì nhãn vẫn là `November 2026`.
+Ngày 31 được xử lý đúng: 31/1 → mốc 1 kết thúc 28 hoặc 29/2, mốc sau bắt đầu ngay ngày kế tiếp, không hở không chồng.
+Plan đã tạo trước thay đổi này giữ nguyên lịch cũ.
 
 **Ví dụ**: mục tiêu 10.000.000 VND, 3 tháng, `MONTHLY`, bắt đầu 01/12/2026
-→ 3 mốc: Tháng 12/2026 = 3.333.333,33 · Tháng 1/2027 = 3.333.333,33 · Tháng 2/2027 = 3.333.333,34.
+→ 3 mốc: December 2026 = 3.333.333,33 · January 2027 = 3.333.333,33 · February 2027 = 3.333.333,34.
 
 ---
 
@@ -231,11 +233,11 @@ và một plan được tính là "đã xong" khi tổng đã góp ≥ target.
 ```mermaid
 flowchart TD
     A[GET /expense-categories] --> B{User chưa có danh mục?}
-    B -->|có| C[Seed 6 danh mục mặc định<br/>Rent, Utilities, Subscriptions = FIXED<br/>Groceries, Transport, Dining out = VARIABLE]
+    B -->|có| C[Seed 6 danh mục mặc định<br/>Rent, Utilities, Subscriptions = FIXED<br/>Groceries, Transport, Dining out = VARIABLE<br/>2 request cùng lúc → bên thua đọc lại, không lỗi]
     B -->|không| D[Trả danh sách]
     C --> D
     D --> E[POST /expenses hoặc /expenses/multiple ≤ 50 dòng]
-    E --> F{spentOn ≤ hôm nay<br/>và danh mục thuộc user?}
+    E --> F{spentOn ≤ hôm nay, danh mục thuộc user<br/>và planId nếu có thuộc user?}
     F -->|không| X[400 / 404]
     F -->|có| G[Lưu expense, expenseType copy từ danh mục tại thời điểm tạo]
     G --> H[GET /expenses có phân trang + GET /expenses/summary]
@@ -244,12 +246,14 @@ flowchart TD
 - Tạo danh mục riêng: trùng tên (không phân biệt hoa thường) → `409 DUPLICATE_CATEGORY_NAME`.
 - Bulk: kiểm tra **mọi dòng trước**, có dòng lỗi thì không lưu dòng nào và trả về toàn bộ lỗi.
 - Đổi `defaultType` của danh mục **không** đổi các expense cũ; muốn đổi thì `PATCH` từng expense.
-- Lọc: `from`+`to` (đủ cả hai hoặc không có gì = toàn thời gian), `type`, `categoryId`. List và summary dùng chung
+- Lọc: `from`+`to` (đủ cả hai hoặc không có gì = toàn thời gian), `type`, `categoryId`, `planId`. List và summary dùng chung
   một mệnh đề WHERE nên không bao giờ lệch nhau. Summary chia theo từng loại tiền; `fixed + variable = total`.
 - Xóa expense = **xóa hẳn** khỏi DB.
 - `currency` chỉ nhận `VND`/`USD` (không phân biệt hoa thường khi gửi lên), lưu dạng chữ hoa.
 - List phân trang tối đa 100 dòng/trang.
-- ⚠️ `planId` trên expense được nhận ở request nhưng **không có cột lưu**; liên kết chi tiêu ↔ mục tiêu chưa tồn tại.
+- **Gắn chi tiêu vào mục tiêu** (`planId`, tùy chọn): plan phải là của chính user, sai → `EXPENSE_PLAN_MISMATCH`.
+  Khi `PATCH`: không gửi = giữ nguyên, gửi `""` = bỏ liên kết. List và summary đều lọc được theo `planId`.
+  Xóa plan thì các expense đã gắn được **bỏ liên kết** (expense vẫn giữ lại vì đó là chi tiêu thật).
 
 ---
 
@@ -271,7 +275,7 @@ Prompt tối đa 2000 ký tự. Lỗi từ AI → `SERVICE_UNAVAILABLE` với th
 | Tiền tệ | Không bao giờ cộng gộp khác loại tiền. Plan và expense gắn tiền tệ riêng, không quy đổi |
 | Múi giờ | "Hôm nay" là ngày theo `Asia/Ho_Chi_Minh` (bean `Clock` trong `ClockConfig`), không theo giờ máy chủ (Render = UTC) |
 | Đa người dùng | Mọi truy vấn lọc theo `userId` lấy từ JWT, không bao giờ từ request body. Tài nguyên không phải của mình trả về `404` y hệt "không tồn tại" (lọc ngay trong câu query) |
-| Xóa | **Xóa hẳn** cho cả plan (kèm milestone) và expense. Các dòng đã soft-delete từ trước vẫn nằm trong DB nên mọi query đọc vẫn lọc `is_deleted = false` |
+| Xóa | **Xóa hẳn** cho cả plan (kèm milestone) và expense. Xóa plan thì bỏ liên kết các expense gắn với nó. Các dòng đã soft-delete từ trước vẫn nằm trong DB nên mọi query đọc vẫn lọc `is_deleted = false` |
 | Bất biến tài chính | Tổng target của các milestone = `targetAmount`; tổng phải góp sau phân bổ = `targetAmount` |
 
 ---
@@ -292,14 +296,13 @@ Prompt tối đa 2000 ký tự. Lỗi từ AI → `SERVICE_UNAVAILABLE` với th
 | B12 | §2 | Job dọn token truyền sai kiểu | ✅ Đã sửa |
 | B14 | §2 | Email phân biệt hoa thường | ✅ Đã sửa (chưa có rate limit đăng nhập) |
 | — | §6 | N+1 ở danh sách plan | ✅ Đã sửa (1 query cho mọi milestone) |
-| B7 | §3 | Mốc đầu tiên bị ngắn (tháng/năm dương lịch) | ⏳ Chưa sửa: đổi nhãn/kỳ hạn, cần thống nhất với FE |
-| B9 | §7 | `planId` của expense bị bỏ qua | ⏳ Chưa sửa: cần thêm cột + migration nếu muốn dùng |
-| B13 | §7 | Seed danh mục mặc định bị race khi 2 request đầu tiên song song | ⏳ Chưa sửa |
+| B7 | §3 | Mốc đầu tiên bị ngắn (tháng/năm dương lịch) | ✅ Đã sửa (chỉ áp dụng cho plan tạo mới) |
+| B9 | §7 | `planId` của expense bị bỏ qua | ✅ Đã sửa (cột `expenses.plan_id`) |
+| B13 | §7 | Seed danh mục mặc định bị race khi 2 request đầu tiên song song | ✅ Đã sửa |
 | — | §2, §8 | Rate limit đăng nhập & AI | ⏳ Chưa có |
 
 **Câu hỏi nghiệp vụ còn mở:**
 
-1. Mốc đầu tiên của lịch tháng/năm: bắt đầu từ `startDate` hay theo lịch dương (B7)?
-2. Có cho phép **sửa mục tiêu giữa chừng** (đổi số tiền, gia hạn) không? Hiện chưa có endpoint; nếu có thì phải
+1. Có cho phép **sửa mục tiêu giữa chừng** (đổi số tiền, gia hạn) không? Hiện chưa có endpoint; nếu có thì phải
    sinh lại lịch cho phần chưa tới hạn (công thức phân bổ mới đã sẵn sàng cho việc này vì dựa trên tổng base target).
-3. Có cần **lịch sử giao dịch bất biến** (mỗi lần góp/rút là một dòng) thay vì ghi đè `actualSaved` không?
+2. Có cần **lịch sử giao dịch bất biến** (mỗi lần góp/rút là một dòng) thay vì ghi đè `actualSaved` không?
